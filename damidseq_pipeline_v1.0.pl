@@ -107,6 +107,14 @@ if (-e "$HOME/.config/damid_pipeline_defaults") {
 	close DEFAULTS;
 }
 
+# Parameter check -- first run:
+my $no_paths;
+for my $p ('window_file_dir','gatc_frag_file','bowtie2_genome_dir') {
+	unless ($vars{$p}) {
+		$no_paths = 1;
+	}
+}
+
 # CLI processing
 my @cli;
 my @in_files;
@@ -130,37 +138,8 @@ foreach (@ARGV) {
 	push @in_files, $_;
 }
 
-# Save parameters if requested
-if ($vars{'save_defaults'}) {
-	unless (-d "$HOME/.config/") {
-		mkdir("$HOME/.config/") || die("Cannot create $HOME/.config directory: $!\n\n")
-	}
-	
-	print STDERR "Writing defaults to file ...\n";
-	open(DEFAULTS,">$HOME/.config/damid_pipeline_defaults") || die("Cannot open defaults file for writing: $!\n\n");
-	for my $p (keys %vars) {
-		next if $p eq 'save_defaults';
-		next if $p eq 'reset_defaults';
-		next unless $vars{$p};
-		print DEFAULTS "$p\t$vars{$p}\n";
-	}
-	print STDERR "Done.\n\n";
-	close DEFAULTS;
-}
-
-# reset defaults
-if ($vars{'reset_defaults'}) {
-	unlink("$HOME/.config/damid_pipeline_defaults") if -e "$HOME/.config/damid_pipeline_defaults";
-	print STDERR "Defaults reset ... please restart.\n\n";
-	exit 0;
-}
-
-# Parameter checks:
-for my $p ('window_file_dir','gatc_frag_file','bowtie2_genome_dir') {
-	unless ($vars{$p}) {
-		die("Please use the --$p option to specifiy the $vars_details{$p} ...\n\n")
-	}
-}
+check_paths();
+save_defaults();
 
 # Global input files
 my $windows_file = "$vars{'window_file_dir'}/dm3_windows_$vars{'bins'}";
@@ -174,6 +153,7 @@ $date =~ s/:/-/g;
 
 open (STATS, ">pipeline-$date.log") || die "Could not open bowtie output file for writing: $!\n";
 my $args = join("|",@cli);
+
 printout("Version $version\n\n");
 print STATS "Command-line options: @ARGV\n\n";
 
@@ -181,15 +161,18 @@ print STATS "Command-line options: @ARGV\n\n";
 my $index_file = "index.txt";
 
 # CLI files 
-# if no files specified, process all .gz files in directory.  If no .gz files, show a help message
+# if no files specified, process all .gz files in directory.
 unless (@in_files) {
 	printout("Searching for files ...\n");
 	@in_files = glob("*.gz");
 }
-help() unless @in_files;
+
+unless (@in_files) {
+	printout("ERROR: no .fastq.gz files found (and no files specified on the command-line).\n(Use --help to see command-line options ...)\n\n")
+}
 
 # Read Index file
-printout("\n\n*** Reading index file ...\n");
+printout("\n*** Reading index file ...\n");
 if (-e $index_file) {
 	open (NORM, "<$index_file") || die "Unable to open normalisation file for reading: $!\n";
 	my @norm = <NORM>;
@@ -201,20 +184,31 @@ if (-e $index_file) {
 		$i =~ s/A//;
 		$index{$i}=$name;
 	}
+} else {
+	die <<EOT;
+ERROR: no index.txt file found!
+
+The pipeline script requires a single tab-delimited file named index.txt that lists sequencing adaptors with sample names -- for e.g.:
+
+A6	Dam
+A12	polII
+
+Adaptors are taken from the .fastq file name (e.g. the file name for the Dam sample above should contain 'A006') and do not need to match the actual adaptors used.
+EOT
 }
 
-printout("\n\n*** Matching adaptors ...\n");
+printout("\n*** Matching adaptors ...\n");
 foreach my $l (@in_files) {
 	print "$l\n";
 	
-	## Change this next line's regexp to match your sequencing format (currently matches eg "Index6" or "A6")
+	## Change this next line's regexp to match your sequencing format (currently matches, e.g. "Index6" or "A006")
 	my ($i) = $l =~ m/.*?(?:index|a0*)+(\d+)/i;
 	if ($index{$i}) {
-		printout("$index{$i}: Index $i\n\n");
+		printout("$index{$i}: Index $i\n");
 		$files{$index{$i}}[0]=$l;
 		
 		if ($index{$i} =~ m/^dam$/i) {
-			die("Error: more than one Dam sample detected.  Please only use one Dam control per run.\n\n") if $damname;
+			die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
 			$damname = $index{$i}
 		}
 	}
@@ -240,6 +234,72 @@ printout("All done.\n\n");
 
 
 
+#############################
+### Subroutines start here
+###
+
+sub check_paths {
+	# Check paths
+	if ($vars{'window_file_dir'} && !(-d "$vars{'window_file_dir'}")) {
+		print STDERR "WARTNING: --window_file_dir option specified but directory does not appear to exist!\n";
+		if ($no_paths) {
+			print STDERR "*** not saving file paths automatically (use --save_defaults=1 to override)\n\n";
+			$no_paths=0;
+		}
+	}
+	
+	if ($vars{'gatc_frag_file'} && !(-e "$vars{'gatc_frag_file'}")) {
+		print STDERR "WARTNING: --gatc_frag_file option specified but file does not appear to exist!\n";
+		if ($no_paths) {
+			print STDERR "*** not saving file paths automatically (use --save_defaults=1 to override)\n\n";
+			$no_paths=0;
+		}
+	}
+	
+	if ($vars{'bowtie2_genome_dir'} && !(-e "$vars{'bowtie2_genome_dir'}.1.bt2")) {
+		print STDERR "WARTNING: --bowtie2_genome_dir option specified but files with basename does not appear to exist ...\n\n(please ensure you specify both the directory and the basename of the .bt2 index files -- i.e. if files are dmel_r5.57.1.bt2 dmel_r5.57.2.bt2 etc, located inside the directory Dm_r5.57, use '[path to]/Dm_r5.57/dmel_r5.57' as the option value ...\n\n";
+		if ($no_paths) {
+			print STDERR "*** not saving file paths automatically (use --save_defaults=1 to override)\n\n";
+			$no_paths=0;
+		}
+	}
+	
+	# Parameter checks:
+	for my $p ('window_file_dir','gatc_frag_file','bowtie2_genome_dir') {
+		unless ($vars{$p}) {
+			die("Please use the --$p option to specifiy the $vars_details{$p} ...\n\n");
+		} elsif ($no_paths) {
+			$vars{'save_defaults'}=1;
+		}
+	}
+}
+
+sub save_defaults {
+	# Save parameters if requested
+	if ($vars{'save_defaults'}) {
+		unless (-d "$HOME/.config/") {
+			mkdir("$HOME/.config/") || die("Cannot create $HOME/.config directory: $!\n\n")
+		}
+		
+		print STDERR "Writing defaults to file ...\n";
+		open(DEFAULTS,">$HOME/.config/damid_pipeline_defaults") || die("Cannot open defaults file for writing: $!\n\n");
+		for my $p (keys %vars) {
+			next if $p eq 'save_defaults';
+			next if $p eq 'reset_defaults';
+			next unless $vars{$p};
+			print DEFAULTS "$p\t$vars{$p}\n";
+		}
+		print STDERR "Done.\n\n";
+		close DEFAULTS;
+	}
+	
+	# reset defaults
+	if ($vars{'reset_defaults'}) {
+		unlink("$HOME/.config/damid_pipeline_defaults") if -e "$HOME/.config/damid_pipeline_defaults";
+		print STDERR "Defaults reset ... please restart.\n\n";
+		exit 0;
+	}
+}
 
 sub align_sequences {
 	if ($vars{'bowtie'}) {
