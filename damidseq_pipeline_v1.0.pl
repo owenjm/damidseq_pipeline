@@ -321,7 +321,7 @@ sub align_sequences {
 sub extend_reads {
 	# Extend reads
 	if ($vars{'extend_reads'}) {
-		printout("\n\n*** Extending reads to $vars{'len'} bases ...\n\n");
+		printout("\n*** Extending reads to $vars{'len'} bases ...\n\n");
 		foreach my $fn (keys %files) {
 			printout("Reading input file: $fn ...\n");
 			open (IN, "<$fn.sam") || die "Unable to read $fn: $!\n";
@@ -358,7 +358,7 @@ sub extend_reads {
 			}
 			close IN;
 			
-			printout("\nSeqs extended (>q30) = $seqs\n");
+			printout("Seqs extended (>q30) = $seqs\n\n");
 			
 			# Store numbers of reads for normalisation later
 			$counts{$fn}=$seqs;
@@ -372,11 +372,11 @@ sub extend_reads {
 }
 
 sub calc_bins {
-	printout("\n\n*** Calculating bins ...\n");
+	printout("\n\n*** Calculating bins ...");
 	foreach my $n (keys %files) {
 		my $fn = "$n-ext$vars{'len'}";
 		
-		printout("\nNow working on $fn ...\n\n");
+		printout("\n\nNow working on $fn ...\n");
 		
 		if ($vars{'extend_reads'}) {
 			printout("Generating .bam file ...\n");
@@ -470,11 +470,12 @@ sub calc_bins {
 			$gatc_frag_score{"$chra-$mida-$midb"}{$n}=$mean_rnd;
 			push @{$array{$n}}, [ $chra, $mida, $midb, $mean_rnd];
 		}
+		printout("\n");
 	}
 }
 
 sub normalize {
-	printout("\n\n*** Normalising counts and adding background ...\n");
+	printout("\n*** Normalising counts and adding background ...\n");
 	foreach my $n (keys %files) {
 		printout("\nProcessing input: $n ...\n");
 		
@@ -516,14 +517,15 @@ sub generate_ratio {
 	foreach my $n (keys %files) {
 		next if $n =~ m/^dam$/i;
 		
-		printout("\nNow working on $n ...\n\n"); 
+		printout("\nNow working on $n ...\n"); 
 
 		my %data;
 		
 		# find the lowest number of compared counts -- this will now use a different number of pseudocounts per sample
 		my $psc_min = ($counts{$n}, $denom)[$counts{$n} > $denom];
 		my $pseudocounts = ($vars{'pseudocounts'} ? $vars{'pseudocounts'} : 10*$psc_min/@{$full_tracks{$n}}); # pseudocounts value is related to total reads/number of bins
-		printout("  ... adding $pseudocounts pseudocounts to each sample\n");
+		my $print_psc = sprintf("%0.2f",$pseudocounts);
+		printout("  ... adding $print_psc pseudocounts to each sample\n");
 		
 		printout("Reading Dam ...\n");
 		foreach (@{$array{$damname}}) {
@@ -541,7 +543,7 @@ sub generate_ratio {
 		my $fout="$n-vs-$damname.gatc.gff";
 		open (OUT, ">$fout") || die "Unable to open $fout for writing: $!\n";
 		foreach my $chr (sort keys %data) {
-			foreach my $start (sort {$a <=> $b} keys $data{$chr}) {
+			foreach my $start (sort {$a <=> $b} keys %{ $data{$chr}}) {
 				my ($end, $score1, $score2) = @{ $data{$chr}{$start}};
 				next unless defined($score2);
 				my $score = log($score2 /$score1)/log(2);
@@ -581,7 +583,7 @@ sub generate_ratio {
 			my $fout="$n-vs-$damname.gff";
 			open (OUT, ">$fout") || die "Unable to open $fout for writing: $!\n";
 			foreach my $chr (sort keys %data) {
-				foreach my $start (sort {$a <=> $b} keys $data{$chr}) {
+				foreach my $start (sort {$a <=> $b} keys %{ $data{$chr}}) {
 					my ($end, $score1, $score2) = @{ $data{$chr}{$start}};
 					next unless defined($score2);
 					my $score = log($score2 /$score1)/log(2);
@@ -620,6 +622,13 @@ sub quantize_data {
 		}
 		my $total_measurements = @ratios;
 		my $avg = stdev(@ratios);
+		
+		# Just in case ...
+		if ($avg == 0) {
+			$avg = 1;
+			printout("\n*** WARNING: average ratio was zero ... no normalisation applied.\n(Unless you are processing the provided example files or *very* small read numbers, this shouldn't happen ...)\n\n")
+		}
+		
 		my $norm = 1/$avg;
 		printout("Norm factor = $norm based off $total_measurements frags (total $total_frags)\n\n");
 		$norm_factors{$n}=$norm;
@@ -645,6 +654,8 @@ sub find_quants {
 	my @frags;
 	
 	my $total_coverage;
+	
+	printout("\nNow working on $prot ...\n");
 
 	foreach my $k (keys %gatc_frag_score) {
 		my $score = $gatc_frag_score{$k}{$prot};
@@ -715,7 +726,7 @@ sub help {
 }
 
 sub load_gatc_frags {
-	printout("\nReading GATC file ...\n");
+	printout("\n*** Reading GATC file ...\n");
 	open (GATC, "<","$vars{'gatc_frag_file'}") || die "Unable to read GATC file: $!\n";
 	@gatc = (<GATC>);
 	chomp (@gatc);
