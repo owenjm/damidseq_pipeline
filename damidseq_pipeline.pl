@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Copyright © 2013-14, Owen Marshall
+# Copyright Â© 2013-14, Owen Marshall
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ use strict;
 $|++;
 
 my $version = "1.0";
-print STDERR "\nBrand lab DamID-seq pipeline v$version\nCopyright © 2013-14, Owen Marshall\n\n";
+print STDERR "\nBrand lab DamID-seq pipeline v$version\nCopyright Â© 2013-14, Owen Marshall\n\n";
 
 # Global parameters
 my %vars = (
