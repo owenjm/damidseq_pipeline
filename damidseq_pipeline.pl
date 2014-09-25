@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Copyright Â© 2013-14, Owen Marshall
+# Copyright © 2013-14, Owen Marshall
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,8 +20,8 @@
 use strict;
 $|++;
 
-my $version = "1.0";
-print STDERR "\nBrand lab DamID-seq pipeline v$version\nCopyright Â© 2013-14, Owen Marshall\n\n";
+my $version = "1.0.1";
+print STDERR "\nBrand lab DamID-seq pipeline v$version\nCopyright © 2013-14, Owen Marshall\n\n";
 
 # Global parameters
 my %vars = (
@@ -32,7 +32,7 @@ my %vars = (
 	'bins' => 75,
 	'bowtie2_path' => '',
 	'samtools_path' => '',
-	'coveragebed_path' => '',
+	'bedtools_path' => '',
 	'window_file_dir' => '',
 	'gatc_frag_file' => '',
 	'bowtie2_genome_dir' => '',
@@ -52,11 +52,11 @@ my %vars_details = (
 	'extend_reads' => 'Perform read extension [1/0]',
 	'len' => 'Length to extend reads to',
 	'q' => 'Cutoff Q score for aligned reads',
-	'bins' => 'Genome bin size for coverageBed (requires premade file)',
+	'bins' => 'Genome bin size for BEDTools (requires premade file)',
 	'bowtie2_path' => 'path to bowtie2 executable (leave blank if in path)',
 	'samtools_path' => 'path to samtools executable (leave blank if in path)',
-	'coveragebed_path' => 'path to coverageBed executable (leave blank if in path)',
-	'window_file_dir' => 'directory for window files for coverageBed',
+	'bedtools_path' => 'path to BEDTools executable (leave blank if in path)',
+	'window_file_dir' => 'directory for window files for BEDTools',
 	'gatc_frag_file' => 'GFF file containing all instances of the sequence GATC',
 	'bowtie2_genome_dir' => 'Directory and basename for bowtie2 .bt2 indices',
 	'threads' => 'threads for bowtie2 to use',
@@ -173,21 +173,8 @@ unless (@in_files) {
 
 # Read Index file
 printout("\n*** Reading index file ...\n");
-if (-e $index_file) {
-	open (NORM, "<$index_file") || die "Unable to open normalisation file for reading: $!\n";
-	my @norm = <NORM>;
-	chomp(@norm);
-	printout("\nIndex\tName\n");
-	foreach my $l (@norm) {
-		my ($i, $name) = split(/\s+/,$l);
-		printout("$i\t$name\n");
-		$i =~ s/A//;
-		$index{$i}=$name;
-	}
-} else {
-	die <<EOT;
-ERROR: no index.txt file found!
 
+my $index_txt_error = <<EOT;
 The pipeline script requires a single tab-delimited file named index.txt that lists sequencing adaptors with sample names -- for e.g.:
 
 A6	Dam
@@ -195,6 +182,28 @@ A12	polII
 
 Adaptors are taken from the .fastq file name (e.g. the file name for the Dam sample above should contain 'A006') and do not need to match the actual adaptors used.
 EOT
+
+if (-e $index_file) {
+	open (NORM, "<$index_file") || die "Unable to open normalisation file for reading: $!\n";
+	my @norm = <NORM>;
+	chomp(@norm);
+	printout("\nIndex\tName\n");
+	foreach my $l (@norm) {
+		next if $l =~ m/^$/; # skip new lines
+		next if $l =~ m/^#/; # skip comments
+		
+		my ($i, $name) = split(/\s+/,$l);
+		
+		unless (($name) && ($i =~ m/.*?(?:index|a)(?:0*)+\d+/i)) {
+			die("\nERROR: misformatted index.txt file.\n\n$index_txt_error\n")
+		}
+		
+		printout("$i\t$name\n");
+		my ($i_num) = ($i =~ m/.*?(?:index|a)(?:0*)+(\d+)/i);
+		$index{$i_num}=$name;
+	}
+} else {
+	die ("\nERROR: no index.txt file found.\n\n$index_txt_error\n")
 }
 
 printout("\n*** Matching adaptors ...\n");
@@ -202,7 +211,7 @@ foreach my $l (@in_files) {
 	print "$l\n";
 	
 	## Change this next line's regexp to match your sequencing format (currently matches, e.g. "Index6" or "A006")
-	my ($i) = $l =~ m/.*?(?:index|a0*)+(\d+)/i;
+	my ($i) = $l =~ m/.*?(?:index|a)(?:0*)+(\d+)/i;
 	if ($index{$i}) {
 		printout("$index{$i}: Index $i\n");
 		$files{$index{$i}}[0]=$l;
@@ -390,7 +399,7 @@ sub calc_bins {
 		
 		printout("Generating bins from $fn.bam ...\n");
 		
-		my @a = `$vars{'coveragebed_path'}coverageBed -abam $fn-sorted.bam -b $windows_file`;
+		my @a = `$vars{'bedtools_path'}bedtools coverage -abam $fn-sorted.bam -b $windows_file`;
 		
 		die "Unable to process data!" unless @a;
 		
@@ -513,7 +522,7 @@ sub printout {
 
 
 sub generate_ratio {
-	printout("\n\n*** Generating ratios ...\n");
+	printout("\n\n*** Generating ratios ...\n");	
 	foreach my $n (keys %files) {
 		next if $n =~ m/^dam$/i;
 		
@@ -545,8 +554,13 @@ sub generate_ratio {
 		foreach my $chr (sort keys %data) {
 			foreach my $start (sort {$a <=> $b} keys %{ $data{$chr}}) {
 				my ($end, $score1, $score2) = @{ $data{$chr}{$start}};
-				next unless defined($score2);
-				my $score = log($score2 /$score1)/log(2);
+				
+				my $score;
+				unless (($score2) && ($score1)) {
+					$score = 0;
+				} else {
+					$score = log($score2 /$score1)/log(2);
+				}
 			
 				print OUT join("\t",$chr, '.', '.', $start, $end, $score, '.', '.', '.'), "\n";
 			}
@@ -563,9 +577,10 @@ sub generate_ratio {
 			my %data;
 			
 			# find the lowest number of compared counts -- this will now use a different number of pseudocounts per sample
-				my $psc_min = ($counts{$n}, $denom)[$counts{$n} > $denom];
-				my $pseudocounts = ($vars{'pseudocounts'} ? $vars{'pseudocounts'} : 10*$psc_min/@{$full_tracks{$n}}); # pseudocounts value is related to total reads/number of bins
-				printout("  ... adding $pseudocounts pseudocounts to each sample\n");
+			my $psc_min = ($counts{$n}, $denom)[$counts{$n} > $denom];
+			my $pseudocounts = ($vars{'pseudocounts'} ? $vars{'pseudocounts'} : 10*$psc_min/@{$full_tracks{$n}}); # pseudocounts value is related to total reads/number of bins
+			my $print_psc = sprintf("%0.2f",$pseudocounts);
+			printout("  ... adding $print_psc pseudocounts to each sample\n");
 			
 			printout("Reading Dam ...\n");
 			foreach (@{$full_tracks{$damname}}) {
@@ -585,9 +600,14 @@ sub generate_ratio {
 			foreach my $chr (sort keys %data) {
 				foreach my $start (sort {$a <=> $b} keys %{ $data{$chr}}) {
 					my ($end, $score1, $score2) = @{ $data{$chr}{$start}};
-					next unless defined($score2);
-					my $score = log($score2 /$score1)/log(2);
-				
+					
+					my $score;
+					unless (($score2) && ($score1)) {
+						$score = 0;
+					} else {
+						$score = log($score2 /$score1)/log(2);
+					}
+					
 					print OUT join("\t",$chr, '.', '.', $start, $end, $score, '.', '.', '.'), "\n";
 				}
 			}
