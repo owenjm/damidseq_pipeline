@@ -698,28 +698,6 @@ sub find_quants {
 		printout("   Quant $cut_off: $score\n");
 		$seg{$cut_off}{$prot} = $score;
 	}
-	
-	
-	#my @quants;
-	#for (my $q=0.1;$q<=1;$q+=0.1) {
-	#	push @quants, $q;
-	#}
-	#
-	#printout("Finding quants ...\n");
-	#my $cut_off = shift(@quants);
-	#my $count;
-	#foreach  (@sorted_frags) {
-	#	my $score = $_;
-	#	$count++;
-	#	
-	#	my $prop = $count/@sorted_frags;
-	#
-	#	if ($prop>$cut_off) {
-	#		printout("   *** found quant $cut_off at score $score\n");
-	#		$seg{$cut_off}{$prot} = $score;
-	#		$cut_off = shift(@quants);
-	#	}
-	#}
 }
 
 sub stdev {
