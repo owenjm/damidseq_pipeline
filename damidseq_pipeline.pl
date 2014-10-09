@@ -20,7 +20,7 @@
 use strict;
 $|++;
 
-my $version = "1.0.1";
+my $version = "1.0.2";
 print STDERR "\nBrand lab DamID-seq pipeline v$version\nCopyright © 2013-14, Owen Marshall\n\n";
 
 # Global parameters
@@ -679,36 +679,47 @@ sub find_quants {
 
 	foreach my $k (keys %gatc_frag_score) {
 		my $score = $gatc_frag_score{$k}{$prot};
-		next unless $score >0;
-		#~ $score = 0 if $score eq "NA";
+		next unless $score > 0; # use only non-zero elements of the array
 		push (@frags, $score);
 	}
 	
 	printout("Sorting frags ...\n");
-	my @sorted_frags = sort {$a<=> $b} @frags;
+	my @sorted_frags = sort {$a <=> $b} @frags;
 	
 	my @quants;
-	for (my $q=0.1;$q<=1.05;$q+=0.1) {
-		if ($q >= (0-0.01)) {
-			push @quants, $q;
-		}
+	for (my $q=0.1;$q<=1;$q+=0.1) {
+		push @quants, [$q, int($q * @sorted_frags)];
 	}
 	
 	printout("Finding quants ...\n");
-	my $cut_off = shift(@quants);
-	my $count;
-	foreach  (@sorted_frags) {
-		my $score = $_;
-		$count++;
-		
-		my $prop = $count/@sorted_frags;
-
-		if ($prop>$cut_off) {
-			printout("   *** found quant $cut_off at score $score\n");
-			$seg{$cut_off}{$prot} = $score;
-			$cut_off = shift(@quants);
-		}
+	foreach  (@quants) {
+		my $cut_off = @{$_}[0];
+		my $score = $sorted_frags[@{$_}[1]];
+		printout("   Quant $cut_off: $score\n");
+		$seg{$cut_off}{$prot} = $score;
 	}
+	
+	
+	#my @quants;
+	#for (my $q=0.1;$q<=1;$q+=0.1) {
+	#	push @quants, $q;
+	#}
+	#
+	#printout("Finding quants ...\n");
+	#my $cut_off = shift(@quants);
+	#my $count;
+	#foreach  (@sorted_frags) {
+	#	my $score = $_;
+	#	$count++;
+	#	
+	#	my $prop = $count/@sorted_frags;
+	#
+	#	if ($prop>$cut_off) {
+	#		printout("   *** found quant $cut_off at score $score\n");
+	#		$seg{$cut_off}{$prot} = $score;
+	#		$cut_off = shift(@quants);
+	#	}
+	#}
 }
 
 sub stdev {
