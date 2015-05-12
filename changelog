@@ -6,6 +6,7 @@
 *  Added ability to process BAM files directly
 *  Much better file-handling all round (now takes sample names directly from filenames by default; the option to use an index.txt file remains but is essentially deprecated)
 *  Re-written --help output rountines (better formatted and more informative)
+*  Ability to read gzipped GATC files
 *  Ability to save sets of defaults to enable quick switching between different genomes  (use --save_defaults=[name]; use --load_defaults=[name] to load; use load_defaults=list to list current available options)
 *  New location for config files (in ~/.config/damid_pipeline/).  Existing config file will be migrated automatically
 *  Various small bugfixes and code clean-ups

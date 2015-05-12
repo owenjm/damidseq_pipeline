@@ -1069,7 +1069,15 @@ sub help {
 
 sub load_gatc_frags {
 	printout("\n*** Reading GATC file ...\n");
-	open (GATC, "<","$vars{'gatc_frag_file'}") || die "Unable to read GATC file: $!\n";
+	
+	if ($vars{'gatc_frag_file'} =~ m/\.gz$/) {
+		# gzipped file
+		open (GATC, "gunzip -c $vars{'gatc_frag_file'} |") || die "Error: cannot open GATC file $vars{'gatc_frag_file'}: $!\n\n";
+	} else {
+		open (GATC, "<$vars{'gatc_frag_file'}") || die "Error: cannot open GATC file $vars{'gatc_frag_file'}: $!\n\n";
+	}
+	
+	#open (GATC, "<","$vars{'gatc_frag_file'}") || die "Unable to read GATC file: $!\n";
 	
 	foreach (<GATC>) {
 		my ($chr, $source, $type, $start, $end, $score, $b, $c, $name) = split('\t');
