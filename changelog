@@ -1,0 +1,13 @@
+[v1.2]
+*  Completely re-written normalisation routine based on kernel density estimation
+*  No longer uses bedtools to calculate genomic coverage -- coverage is calculated manually after reading the BAM file with samtools (uses much less memory and is slightly faster)
+*  Binned window files are no longer required (bins are calculated automatically using the sequence information provided in the BAM headers, and the bin size specified by the --bins command-line option)
+*  Better handling of GATC fragment files (should prevent hangs/pauses when creating GATC fragment arrays)
+*  Added ability to process BAM files directly
+*  Much better file-handling all round (now takes sample names directly from filenames by default; the option to use an index.txt file remains but is essentially deprecated)
+*  Re-written --help output rountines (better formatted and more informative)
+*  Ability to save sets of defaults to enable quick switching between different genomes  (use --save_defaults=[name]; use --load_defaults=[name] to load; use load_defaults=list to list current available options)
+*  Various small bugfixes and code clean-ups
+
+[v1.0]
+*  Initial release
