@@ -34,11 +34,15 @@ Click on the links above to download the latest version of the pipeline script a
             bowtie2-build Mus_musculus.GRCm38.dna.primary_assembly.fa GRCm38
             bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 1. Install SAMtools
-1. Install the pre-supplied GATC fragment files
+1. Download a pre-built GATC fragment file for
+    * [*D. melanogaster* r5.57](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz)
+    * [*D. melanogaster* r6](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_BDGP6.GATC.gff.gz)
+    * [*Mus musculus* GRCm38](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/MmGRCm38.GATC.gff.gz) or
+    * [Human GRCh38](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/HsGRCh38.GATC.gff.gz).
     
     Alternatively build your own:
-    1. Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)
-    1. Run the provided (gatc.track.maker.pl)(http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true) script on the fasta sequence, e.g.:
+        1. Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)
+        1. Run the provided (gatc.track.maker.pl)(http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true) script on the fasta sequence, e.g.:
 
             perl gatc.track.maker.pl --name=dmel_r5.57 dmel-all-chromosome-r5.57.fasta
 
