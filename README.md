@@ -43,7 +43,7 @@ Click on the links above to download the latest version of the pipeline script a
     Alternatively build your own:
 
     1. Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)
-    1. Run the provided (gatc.track.maker.pl)(http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true) script on the fasta sequence, e.g.:
+    1. Run the provided [gatc.track.maker.pl](http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true) script on the fasta sequence, e.g.:
 
             perl gatc.track.maker.pl --name=dmel_r5.57 dmel-all-chromosome-r5.57.fasta
 
