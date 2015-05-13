@@ -19,7 +19,7 @@ Click on the links above to download the latest version of the pipeline script a
 ### Installation
 
 1. Unzip the pipeline script zip file, make the damid_pipeline.pl file executable and place it in your path
-1. Install Bowtie 2
+1. Install [Bowtie 2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 1. Obtain Bowtie 2 indices provided by [Bowtie 2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) or [Illumina's iGenome](http://support.illumina.com/sequencing/sequencing_software/igenome.html)
 
     Alternatively, build the Bowtie 2 index files manually:
@@ -33,7 +33,7 @@ Click on the links above to download the latest version of the pipeline script a
 
             bowtie2-build Mus_musculus.GRCm38.dna.primary_assembly.fa GRCm38
             bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
-1. Install SAMtools
+1. Install [SAMtools](http://samtools.sourceforge.net)
 1. Download a pre-built GATC fragment file for
     * [*D. melanogaster* r5.57](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz)
     * [*D. melanogaster* r6](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_BDGP6.GATC.gff.gz)
@@ -41,8 +41,9 @@ Click on the links above to download the latest version of the pipeline script a
     * [Human GRCh38](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/HsGRCh38.GATC.gff.gz).
     
     Alternatively build your own:
-        1. Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)
-        1. Run the provided (gatc.track.maker.pl)(http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true) script on the fasta sequence, e.g.:
+
+    1. Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)
+    1. Run the provided (gatc.track.maker.pl)(http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true) script on the fasta sequence, e.g.:
 
             perl gatc.track.maker.pl --name=dmel_r5.57 dmel-all-chromosome-r5.57.fasta
 
