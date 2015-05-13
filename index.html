@@ -69,7 +69,8 @@
 
 <ol>
 <li>Unzip the pipeline script zip file, make the damid_pipeline.pl file executable and place it in your path</li>
-<li>Install Bowtie 2</li>
+<li>Install <a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a>
+</li>
 <li>
 <p>Obtain Bowtie 2 indices provided by <a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a> or <a href="http://support.illumina.com/sequencing/sequencing_software/igenome.html">Illumina's iGenome</a></p>
 
@@ -93,16 +94,26 @@ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 </li>
 </ol>
 </li>
-<li>Install SAMtools</li>
+<li>Install <a href="http://samtools.sourceforge.net">SAMtools</a>
+</li>
 <li>
-<p>Install the pre-supplied GATC fragment files</p>
+<p>Download a pre-built GATC fragment file for</p>
+
+<ul>
+<li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz"><em>D. melanogaster</em> r5.57</a></li>
+<li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_BDGP6.GATC.gff.gz"><em>D. melanogaster</em> r6</a></li>
+<li>
+<a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/MmGRCm38.GATC.gff.gz"><em>Mus musculus</em> GRCm38</a> or</li>
+<li>
+<a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/HsGRCh38.GATC.gff.gz">Human GRCh38</a>.</li>
+</ul>
 
 <p>Alternatively build your own:</p>
 
 <ol>
 <li>Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)</li>
 <li>
-<p>Run the provided (gatc.track.maker.pl)(<a href="http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true">http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true</a>) script on the fasta sequence, e.g.:</p>
+<p>Run the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true">gatc.track.maker.pl</a> script on the fasta sequence, e.g.:</p>
 
 <pre><code>perl gatc.track.maker.pl --name=dmel_r5.57 dmel-all-chromosome-r5.57.fasta
 </code></pre>
