@@ -44,7 +44,7 @@
 
 <p>Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary, and adding pseudocounts to mitigate the effect of background counts when represented as a ratio is highly recommended.</p>
 
-<p>We use a single pipeline script to handle alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses .fastq files as input, and outputs the final log2 ratio files in GFF or BEDGRAPH format. These files can easily be converted to TDF for viewing in <a href="www.broadinstitute.org/software/igv/">IGV</a> with the provided gff2tdf.pl script (see below).</p>
+<p>We use a single pipeline script to handle alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses .fastq files as input, and outputs the final log2 ratio files in GFF or BEDGRAPH format. These files can easily be converted to TDF for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> with the provided gff2tdf.pl script (see below).</p>
 
 <h3>
 <a id="download" class="anchor" href="#download" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download</h3>
@@ -56,9 +56,9 @@
 
 <ul>
 <li>
-<a href="bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a> v2.1 or above (and appropriate genome indices -- see below) (not required if using pre-aligned BAM files)</li>
+<a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a> v2.1 or above (and appropriate genome indices -- see below) (not required if using pre-aligned BAM files)</li>
 <li>
-<a href="samtools.sourceforge.net">SAMtools</a> v0.1.9 or above</li>
+<a href="http://samtools.sourceforge.net">SAMtools</a> v0.1.9 or above</li>
 <li>a GFF file containing all GATC sites in the genome (a file for the Drosophila genome is provided in the script .zip archive)</li>
 <li>a *nix operating system (e.g. linux, Mac OSX) with Perl v5.10 or greater installed. We recommend using Ubuntu Linux in a virtual machine if using Windows.</li>
 <li>Sequencing data in FASTQ or BAM format</li>
@@ -71,17 +71,17 @@
 <li>Unzip the pipeline script zip file, make the damid_pipeline.pl file executable and place it in your path</li>
 <li>Install Bowtie 2</li>
 <li>
-<p>Obtain Bowtie 2 indices provided by <a href="bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a> or <a href="support.illumina.com/sequencing/sequencing_software/igenome.html">Illumina's iGenome</a></p>
+<p>Obtain Bowtie 2 indices provided by <a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a> or <a href="http://support.illumina.com/sequencing/sequencing_software/igenome.html">Illumina's iGenome</a></p>
 
 <p>Alternatively, build the Bowtie 2 index files manually:</p>
 
 <ol>
 <li>
 <p>Download the latest FASTA genome primary_assembly (or toplevel) file from <a href="ftp.ensembl.org/pub/current_fasta/">Ensembl</a>
-e.g. <a href="ftp.ensembl.org/pub/current_fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz">the current release for <em>Mus musculus</em></a></p>
+e.g. <a href="http://ftp.ensembl.org/pub/current_fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz">the current release for <em>Mus musculus</em></a></p>
 
-<p>(alternatively, for <em>Drosophila</em>, download from the <a href="ftp.flybase.net/releases/current/">Flybase FTP site</a>
- e.g. <a href="ftp.flybase.net/releases/FB2014_03/dmel_r5.57/fasta/dmel-all-chromosome-r5.57.fasta.gz"><em>D. melanogaster</em> release 5.57</a>)</p>
+<p>(alternatively, for <em>Drosophila</em>, download from the <a href="http://ftp.flybase.net/releases/current/">Flybase FTP site</a>
+ e.g. <a href="http://ftp.flybase.net/releases/FB2014_03/dmel_r5.57/fasta/dmel-all-chromosome-r5.57.fasta.gz"><em>D. melanogaster</em> release 5.57</a>)</p>
 </li>
 <li>Extract the .gz file</li>
 <li>
@@ -167,7 +167,7 @@ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 A12 polII 
 </code></pre>
 
-<p>where A6 is the sequencing adaptor index. The sample name cannot contain spaces and there has to be one (and only one) sample called "Dam"; the adaptor index must to be referenced in the fastq filename (e.g. for "A6", either "Index6" or "A006" are expected in the filename). Please see the <a href="github.com/owenjm/damid_pipeline/blob/master/example.zip?raw=true">provided example</a> for an illustration of the index.txt file format and matching file names.</p>
+<p>where A6 is the sequencing adaptor index. The sample name cannot contain spaces and there has to be one (and only one) sample called "Dam"; the adaptor index must to be referenced in the fastq filename (e.g. for "A6", either "Index6" or "A006" are expected in the filename). Please see the <a href="http://github.com/owenjm/damid_pipeline/blob/master/example.zip?raw=true">provided example</a> for an illustration of the index.txt file format and matching file names.</p>
 
 <h3>
 <a id="example-dataset" class="anchor" href="#example-dataset" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example dataset</h3>
