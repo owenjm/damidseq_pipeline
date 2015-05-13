@@ -84,9 +84,9 @@ If bowtie2 and samtools are not in your path, you can specify these on the comma
 
 The final output will be two ratio files: Sample-vs-DAM.gff and Sample-vs-DAM.gatc.gff. The .gatc.gff file represents the GATC fragments (based on the reference genome) and should be used for all subsequent analysis. The other ratio file contains the coverageBed bins (i.e. 75nt bins by default) and may be useful for data representation.
 
-The GFF format is used by default.  The pipeline script can output the final ratio files in BEDGRAPH format instead if the --bedgraph command-line switch is used.
+The GFF format is used by default.  The pipeline script can output the final ratio files in BEDGRAPH format instead if the --output_format=bedgraph command-line switch is used.
 
-Either file can be converted to .tdf format for viewing in [IGV](http://www.broadinstitute.org/software/igv/) either using IGVtools directly, or via the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script.
+Either file can be converted to .tdf format for viewing in [IGV](http://www.broadinstitute.org/software/igv/) via the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script.
 
 ### Working with multiple genomes
 
