@@ -164,9 +164,9 @@ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 
 <p>The final output will be two ratio files: Sample-vs-DAM.gff and Sample-vs-DAM.gatc.gff. The .gatc.gff file represents the GATC fragments (based on the reference genome) and should be used for all subsequent analysis. The other ratio file contains the coverageBed bins (i.e. 75nt bins by default) and may be useful for data representation.</p>
 
-<p>The GFF format is used by default.  The pipeline script can output the final ratio files in BEDGRAPH format instead if the --bedgraph command-line switch is used.</p>
+<p>The GFF format is used by default.  The pipeline script can output the final ratio files in BEDGRAPH format instead if the --output_format=bedgraph command-line switch is used.</p>
 
-<p>Either file can be converted to .tdf format for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> either using IGVtools directly, or via the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script.</p>
+<p>Either file can be converted to .tdf format for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> via the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script.</p>
 
 <h3>
 <a id="working-with-multiple-genomes" class="anchor" href="#working-with-multiple-genomes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Working with multiple genomes</h3>
@@ -200,7 +200,7 @@ A12 polII
 <h3>
 <a id="example-dataset" class="anchor" href="#example-dataset" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example dataset</h3>
 
-<p>An example set of two small (3000 reads each) fastq.gz files and an index.txt file are provided in the zip archive (as "example.zip"), or you can <a href="github.com/owenjm/damid_pipeline/blob/master/example.zip?raw=true">download these separately</a>. Running the pipeline script on these files should successfully produce a polII-vs-Dam.gff ratio file as output.</p>
+<p>An example set of two small (3000 reads each) fastq.gz files and an index.txt file are provided in the zip archive (as "example.zip"), or you can <a href="http://github.com/owenjm/damid_pipeline/blob/master/example.zip?raw=true">download these separately</a>. Running the pipeline script on these files should successfully produce a polII-vs-Dam.gff ratio file as output.</p>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/owenjm">owenjm</a></p>
