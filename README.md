@@ -46,12 +46,12 @@ Click on the links above to download the latest version of the pipeline script a
 
 In order to run correctly, the script needs to know the locations of two paths, specified using the following command-line options:
 
-1. The directory and basename of the bowtie2 index files (obtained or built in steps 3 and 4 above)
+1. The directory and basename of the bowtie2 index files (obtained or built in step 3 above)
     (specified with the --bowtie2_genome_dir option)
         e.g. in the example above, use
 
         --bowtie2_genome_dir=[path_to_.bt2_files]/dmel_r5.57
-1. The GATC fragment .gff file (provided in the zip file, or built in step 6 above)
+1. The GATC fragment .gff file (provided in the zip file, or built in step 5 above)
     (specified with the --gatc_frag_file option)
 
 In order to setup the pipeline to process the *D. melanogaster* genome, for example, the first-run command would be:
