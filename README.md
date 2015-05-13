@@ -37,7 +37,7 @@ Click on the links above to download the latest version of the pipeline script a
 1. Install the pre-supplied GATC fragment files
     
     Alternatively build your own:
-    1. Download the FASTA genome sequence, as in step 4 above (no need to extract the gzipped files)
+    1. Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)
     1. Run the provided gatc.track.maker.pl script on the fasta sequence, e.g.:
 
             perl gatc.track.maker.pl --name=dmel_r5.57 dmel-all-chromosome-r5.57.fasta
