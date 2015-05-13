@@ -44,7 +44,7 @@
 
 <p>Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary, and adding pseudocounts to mitigate the effect of background counts when represented as a ratio is highly recommended.</p>
 
-<p>We use a single pipeline script to handle alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses .fastq files as input, and outputs the final log2 ratio files in GFF or BEDGRAPH format. These files can easily be converted to TDF for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> with the provided gff2tdf.pl script (see below).</p>
+<p>We use a single pipeline script to handle alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses .fastq files as input, and outputs the final log2 ratio files in GFF or BEDGRAPH format. These files can easily be converted to TDF for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> with the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script (see below).</p>
 
 <h3>
 <a id="download" class="anchor" href="#download" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download</h3>
@@ -87,7 +87,7 @@ e.g. <a href="http://ftp.ensembl.org/pub/current_fasta/mus_musculus/dna/Mus_musc
 <li>
 <p>Run bowtie2-build in the directory containing the extracted .fasta file. For the examples above:</p>
 
-<pre><code>bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
+<pre><code>bowtie2-build Mus_musculus.GRCm38.dna.primary_assembly.fa GRCm38
 bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 </code></pre>
 </li>
@@ -95,12 +95,14 @@ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 </li>
 <li>Install SAMtools</li>
 <li>
-<p>Install the pre-supplied GATC location files, or build your own:</p>
+<p>Install the pre-supplied GATC fragment files</p>
+
+<p>Alternatively build your own:</p>
 
 <ol>
-<li>Download the FASTA genome sequence, as in step 4 above (no need to extract the gzipped files)</li>
+<li>Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)</li>
 <li>
-<p>Run the provided gatc.track.maker.pl script on the fasta sequence, e.g.:</p>
+<p>Run the provided (gatc.track.maker.pl)(<a href="http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true">http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true</a>) script on the fasta sequence, e.g.:</p>
 
 <pre><code>perl gatc.track.maker.pl --name=dmel_r5.57 dmel-all-chromosome-r5.57.fasta
 </code></pre>
@@ -116,14 +118,14 @@ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 
 <ol>
 <li>
-<p>The directory and basename of the bowtie2 index files (obtained or built in steps 3 and 4 above)
+<p>The directory and basename of the bowtie2 index files (obtained or built in step 3 above)
 (specified with the --bowtie2_genome_dir option)
     e.g. in the example above, use</p>
 
 <pre><code>--bowtie2_genome_dir=[path_to_.bt2_files]/dmel_r5.57
 </code></pre>
 </li>
-<li>The GATC fragment .gff file (provided in the zip file, or built in step 6 above)
+<li>The GATC fragment .gff file (provided in the zip file, or built in step 5 above)
 (specified with the --gatc_frag_file option)</li>
 </ol>
 
@@ -143,21 +145,48 @@ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 
 <p>The script will by default determine sample names from the file names, and expects a single filename to start with "Dam" in order to automatically assign the Dam-only control.</p>
 
-<p>Running the script with --help will give you a list of adjustable parameters and their default settings. We recommend keeping these at the default value in most cases; however, these can be modified on the command-line with --option=value (no spaces).</p>
+<p>To see all available options, run the script with --help command-line option:</p>
 
-<p>To save modified values for all future runs, run the script with the parameter you wish to change together with the --save_defaults command-line option.</p>
+<pre><code>damidseq_pipeline.pl --help
+</code></pre>
+
+<p>This will give you a list of adjustable parameters and their default and current values if applicable. We recommend keeping these at the default value in most cases; however, these can be modified on the command-line with --option=value (no spaces).</p>
+
+<p>To save modified values for all future runs, run the script with the parameter you wish to change together with the --save_defaults command-line option:</p>
+
+<pre><code>damidseq_pipeline.pl --save_defaults
+</code></pre>
 
 <p>If bowtie2 and samtools are not in your path, you can specify these on the command-line also.</p>
 
-<h4>
-<a id="working-with-multiple-genomes" class="anchor" href="#working-with-multiple-genomes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Working with multiple genomes</h4>
+<h3>
+<a id="output" class="anchor" href="#output" aria-hidden="true"><span class="octicon octicon-link"></span></a>Output</h3>
 
-<p>If the user expects to process data from multiple genomes, separate genome specifications can be saved by using the --save_defaults=[name] along with --bowtie2_genome_dir and --gatc_frag_file.</p>
+<p>The final output will be two ratio files: Sample-vs-DAM.gff and Sample-vs-DAM.gatc.gff. The .gatc.gff file represents the GATC fragments (based on the reference genome) and should be used for all subsequent analysis. The other ratio file contains the coverageBed bins (i.e. 75nt bins by default) and may be useful for data representation.</p>
 
-<p>Once set up, different genome definitions can be quickly loaded using the --load_defaults=[name] option.  All currently saved genome definitions can be listed using --load_defaults=list.</p>
+<p>The GFF format is used by default.  The pipeline script can output the final ratio files in BEDGRAPH format instead if the --bedgraph command-line switch is used.</p>
 
-<h4>
-<a id="processing-fastq-files-with-adaptor-codes" class="anchor" href="#processing-fastq-files-with-adaptor-codes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Processing FASTQ files with adaptor codes</h4>
+<p>Either file can be converted to .tdf format for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> either using IGVtools directly, or via the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script.</p>
+
+<h3>
+<a id="working-with-multiple-genomes" class="anchor" href="#working-with-multiple-genomes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Working with multiple genomes</h3>
+
+<p>If the user expects to process data from multiple genomes, separate genome specifications can be saved by using the --save_defaults=[name] along with the --bowtie2_genome_dir and --gatc_frag_file options (and any other custom options that the user wishes to set as default for this genome, e.g. the bin width).  For e.g.:</p>
+
+<pre><code>damidseq_pipeline.pl --save_defaults=fly --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
+
+damidseq_pipeline.pl --save_defaults=mouse --bins=500 --gatc_frag_file=path/to/MmGRCm38.GATC.gff.gz --bowtie2_genome_dir=path/to/Mm_GRCm38/GRCm38
+</code></pre>
+
+<p>Once set up, different genome definitions can be quickly loaded using the --load_defaults=[name] option, e.g.:</p>
+
+<pre><code>damidseq_pipeline.pl --load_defaults=fly
+</code></pre>
+
+<p>All currently saved genome definitions can be listed using --load_defaults=list.</p>
+
+<h3>
+<a id="processing-fastq-files-with-adaptor-codes" class="anchor" href="#processing-fastq-files-with-adaptor-codes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Processing FASTQ files with adaptor codes</h3>
 
 <p>The damidseq_pipeline will attempt to automatically determine the sample name from the filenames provided.  </p>
 
@@ -173,15 +202,6 @@ A12 polII
 <a id="example-dataset" class="anchor" href="#example-dataset" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example dataset</h3>
 
 <p>An example set of two small (3000 reads each) fastq.gz files and an index.txt file are provided in the zip archive (as "example.zip"), or you can <a href="github.com/owenjm/damid_pipeline/blob/master/example.zip?raw=true">download these separately</a>. Running the pipeline script on these files should successfully produce a polII-vs-Dam.gff ratio file as output.</p>
-
-<h3>
-<a id="output" class="anchor" href="#output" aria-hidden="true"><span class="octicon octicon-link"></span></a>Output</h3>
-
-<p>The final output will be two ratio files: Sample-vs-DAM.gff and Sample-vs-DAM.gatc.gff. The .gatc.gff file represents the GATC fragments (based on the reference genome) and should be used for all subsequent analysis. The other ratio file contains the coverageBed bins (i.e. 75nt bins by default) and may be useful for data representation.</p>
-
-<p>The pipeline script can output the final ratio files in BedGraph format if the --bedgraph command-line switch is used.</p>
-
-<p>Either file can be converted to .tdf format for viewing in IGV via the gff2tdf.pl script.</p>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/owenjm">owenjm</a></p>
