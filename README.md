@@ -31,10 +31,12 @@ Click on the links above to download the latest version of the pipeline script a
     1. Extract the .gz file
     1. Run bowtie2-build in the directory containing the extracted .fasta file. For the examples above:
 
-            bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
+            bowtie2-build Mus_musculus.GRCm38.dna.primary_assembly.fa GRCm38
             bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 1. Install SAMtools
-1. Install the pre-supplied GATC location files, or build your own:
+1. Install the pre-supplied GATC fragment files
+    
+    Alternatively build your own:
     1. Download the FASTA genome sequence, as in step 4 above (no need to extract the gzipped files)
     1. Run the provided gatc.track.maker.pl script on the fasta sequence, e.g.:
 
@@ -74,9 +76,17 @@ If bowtie2 and samtools are not in your path, you can specify these on the comma
 
 #### Working with multiple genomes
 
-If the user expects to process data from multiple genomes, separate genome specifications can be saved by using the --save_defaults=[name] along with --bowtie2_genome_dir and --gatc_frag_file.
+If the user expects to process data from multiple genomes, separate genome specifications can be saved by using the --save_defaults=[name] along with the --bowtie2_genome_dir and --gatc_frag_file options (and any other custom options that the user wishes to set as default for this genome, e.g. the bin width).  For e.g.:
 
-Once set up, different genome definitions can be quickly loaded using the --load_defaults=[name] option.  All currently saved genome definitions can be listed using --load_defaults=list.
+    damidseq_pipeline.pl --save_defaults=fly --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
+    
+    damidseq_pipeline.pl --save_defaults=mouse --gatc_frag_file=path/to/MmGRCm38.GATC.gff.gz --bowtie2_genome_dir=path/to/Mm_GRCm38/GRCm38
+
+Once set up, different genome definitions can be quickly loaded using the --load_defaults=[name] option, e.g.:
+
+    damidseq_pipeline.pl --load_defaults=fly
+
+All currently saved genome definitions can be listed using --load_defaults=list.
 
 #### Processing FASTQ files with adaptor codes
 
