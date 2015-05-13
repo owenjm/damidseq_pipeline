@@ -22,7 +22,7 @@ use File::Copy;
 
 $|++;
 
-my $version = "1.2pre2";
+my $version = "1.2pre3";
 print STDERR "\nDamID-seq pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
 
 # Global parameters
@@ -123,10 +123,9 @@ my $no_paths;
 my $windows_file;
 
 # Read parameters if exist
+process_cli(0);
 read_defaults();
 parameter_check();
-#process_cli(0);
-
 process_cli(1);
 
 
@@ -366,10 +365,11 @@ sub read_defaults {
 			print_defaults_files();
 		} else {
 			unless (-e "$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}") {
-				print STDERR "Error: cannot find defaults file $vars{'load_defaults'}\n\n";
+				print STDERR "Error: cannot find saved defaults file for '$vars{'load_defaults'}'\n\n";
 				print_defaults_files();
 			}
 			# load the defaults
+			print STDERR "Loading saved defaults for '$vars{'load_defaults'}' ...\n\n";
 			read_defaults_file("$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}");
 		}
 	} elsif (-e "$HOME/.config/damid_pipeline/defaults") {
