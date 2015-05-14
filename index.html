@@ -42,9 +42,9 @@
         <h3>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h3>
 
-<p>Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary, and adding pseudocounts to mitigate the effect of background counts when represented as a ratio is highly recommended.</p>
+<p>Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary and adding pseudocounts to mitigate the effect of background counts is highly recommended.</p>
 
-<p>We use a single pipeline script to handle alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses .fastq files as input, and outputs the final log2 ratio files in GFF or BEDGRAPH format. These files can easily be converted to TDF for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> with the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script (see below).</p>
+<p>We use a single pipeline script to handle sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in GFF or bedGraph format. These files can easily be converted to TDF for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> with the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script (see below).</p>
 
 <h3>
 <a id="download" class="anchor" href="#download" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download</h3>
@@ -54,6 +54,17 @@
 <ul>
 <li><a href="https://github.com/owenjm/damidseq_pipeline/zipball/master">As a zipfile</a></li>
 <li><a href="https://github.com/owenjm/damidseq_pipeline/tarball/master">As a tarball</a></li>
+</ul>
+
+<p>Prebuilt GATC fragment files used by the script are available for the following genomes:</p>
+
+<ul>
+<li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz"><em>Drosophila melanogaster</em> r5.57</a></li>
+<li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_BDGP6.GATC.gff.gz"><em>D. melanogaster</em> r6</a></li>
+<li>
+<a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/MmGRCm38.GATC.gff.gz"><em>Mus musculus</em> GRCm38</a> or</li>
+<li>
+<a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/HsGRCh38.GATC.gff.gz">Human GRCh38</a>.</li>
 </ul>
 
 <h3>
@@ -141,7 +152,7 @@ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 <pre><code>--bowtie2_genome_dir=[path_to_.bt2_files]/dmel_r5.57
 </code></pre>
 </li>
-<li>The GATC fragment .gff file (provided in the zip file, or built in step 5 above)
+<li>The GATC fragment .gff file (downloaded from the pre-built files listed in step 5, or built following the instructions above)
 (specified with the --gatc_frag_file option)</li>
 </ol>
 
@@ -180,7 +191,7 @@ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 
 <p>The final output will be two ratio files: Sample-vs-DAM.gff and Sample-vs-DAM.gatc.gff. The .gatc.gff file represents the data at GATC fragment resolution (based on the reference genome) and should be used for all subsequent analysis. The other ratio file contains the coverageBed bins (i.e. 75nt bins by default) and may be useful for data representation.</p>
 
-<p>The <a href="http://www.ensembl.org/info/website/upload/gff.html">GFF format</a> is used by default.  The pipeline script can output the final ratio files in <a href="http://genome.ucsc.edu/goldenpath/help/bedgraph.html">BedGraph format</a> instead if the --output_format=bedgraph command-line switch is used.</p>
+<p>The <a href="http://www.ensembl.org/info/website/upload/gff.html">GFF format</a> is used by default.  The pipeline script can output the final ratio files in <a href="http://genome.ucsc.edu/goldenpath/help/bedgraph.html">bedGraph format</a> instead if the --output_format=bedgraph command-line switch is used.</p>
 
 <p>Either file can be converted to .tdf format for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> via the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script.</p>
 
