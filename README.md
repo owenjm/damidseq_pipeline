@@ -6,7 +6,9 @@ We use a single pipeline script to handle alignment, read extension, binned coun
 
 ### Download
 
-Click on the links above to download the latest version of the pipeline script and associated files.
+Download the latest version of the pipeline script and associated files:
+* [As a zipfile](https://github.com/owenjm/damidseq_pipeline/zipball/master)
+* [As a tarball](https://github.com/owenjm/damidseq_pipeline/tarball/master)
 
 ### Requirements
 
