@@ -1,8 +1,8 @@
 ### Introduction
 
-Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary, and adding pseudocounts to mitigate the effect of background counts when represented as a ratio is highly recommended.
+Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary and adding pseudocounts to mitigate the effect of background counts is highly recommended.
 
-We use a single pipeline script to handle alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses .fastq files as input, and outputs the final log2 ratio files in GFF or BEDGRAPH format. These files can easily be converted to TDF for viewing in [IGV](http://www.broadinstitute.org/software/igv/) with the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script (see below).
+We use a single pipeline script to handle sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in GFF or bedGraph format. These files can easily be converted to TDF for viewing in [IGV](http://www.broadinstitute.org/software/igv/) with the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script (see below).
 
 ### Download
 
@@ -91,7 +91,7 @@ If bowtie2 and samtools are not in your path, you can specify these on the comma
 
 The final output will be two ratio files: Sample-vs-DAM.gff and Sample-vs-DAM.gatc.gff. The .gatc.gff file represents the data at GATC fragment resolution (based on the reference genome) and should be used for all subsequent analysis. The other ratio file contains the coverageBed bins (i.e. 75nt bins by default) and may be useful for data representation.
 
-The [GFF format](http://www.ensembl.org/info/website/upload/gff.html) is used by default.  The pipeline script can output the final ratio files in [BedGraph format](http://genome.ucsc.edu/goldenpath/help/bedgraph.html) instead if the --output_format=bedgraph command-line switch is used.
+The [GFF format](http://www.ensembl.org/info/website/upload/gff.html) is used by default.  The pipeline script can output the final ratio files in [bedGraph format](http://genome.ucsc.edu/goldenpath/help/bedgraph.html) instead if the --output_format=bedgraph command-line switch is used.
 
 Either file can be converted to .tdf format for viewing in [IGV](http://www.broadinstitute.org/software/igv/) via the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script.
 
