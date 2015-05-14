@@ -10,6 +10,12 @@ Download the latest version of the pipeline script and associated files:
 * [As a zipfile](https://github.com/owenjm/damidseq_pipeline/zipball/master)
 * [As a tarball](https://github.com/owenjm/damidseq_pipeline/tarball/master)
 
+Prebuilt GATC fragment files used by the script are available for the following genomes:
+* [*D. melanogaster* r5.57](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz)
+* [*D. melanogaster* r6](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_BDGP6.GATC.gff.gz)
+* [*Mus musculus* GRCm38](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/MmGRCm38.GATC.gff.gz) or
+* [Human GRCh38](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/HsGRCh38.GATC.gff.gz).
+
 ### Requirements
 
 * [Bowtie 2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) v2.1 or above (and appropriate genome indices -- see below) (not required if using pre-aligned BAM files)
@@ -58,7 +64,7 @@ In order to run correctly, the script needs to know the locations of two paths, 
         e.g. in the example above, use
 
         --bowtie2_genome_dir=[path_to_.bt2_files]/dmel_r5.57
-1. The GATC fragment .gff file (provided in the zip file, or built in step 5 above)
+1. The GATC fragment .gff file (downloaded from the pre-built files listed in step 5, or built following the instructions above)
     (specified with the --gatc_frag_file option)
 
 In order to setup the pipeline to process the *D. melanogaster* genome, for example, the first-run command would be:
