@@ -34,8 +34,8 @@ Prebuilt GATC fragment files used by the script are available for the following 
     1. Download the latest FASTA genome primary_assembly (or toplevel) file from [Ensembl](http://ftp.ensembl.org/pub/current_fasta/)
         e.g. [the current release for *Mus musculus*](http://ftp.ensembl.org/pub/current_fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz)
         
-        (alternatively, for *Drosophila*, download from the [Flybase FTP site](ftp://ftp.flybase.net/releases/current/)
-         e.g. [*D. melanogaster* release 5.57](ftp://ftp.flybase.net/releases/FB2014_03/dmel_r5.57/fasta/dmel-all-chromosome-r5.57.fasta.gz))
+        (alternatively, for *Drosophila*, download from the Flybase FTP site (ftp://ftp.flybase.net/releases/current/)
+         e.g. ftp://ftp.flybase.net/releases/FB2014_03/dmel_r5.57/fasta/dmel-all-chromosome-r5.57.fasta.gz )
     1. Extract the .gz file
     1. Run bowtie2-build in the directory containing the extracted .fasta file. For the examples above:
 
