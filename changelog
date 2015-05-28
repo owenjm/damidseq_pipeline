@@ -3,8 +3,10 @@
 *  Genomic coverage is now calculated internally rather than using bedtools (uses much less memory, is slightly faster, and drops the requirement for an external binned windows file)
 *  Binned window files are no longer required (bins are calculated automatically using the sequence information provided in the BAM headers, and the bin size specified by the --bins command-line option)
 *  Better handling of GATC fragment files (should prevent hangs/pauses when creating GATC fragment arrays)
+*  Memory optimisation for large files (greatly reduces usage for processing mouse/human data)
 *  Added ability to process BAM files directly
 *  Much better file-handling all round (now takes sample names directly from filenames by default; the option to use an index.txt file remains but is essentially deprecated)
+*  New option: --norm_method=[kde/rpm]  "kde" is the default method using kernel density estimation; "rpm" normalises solely on readcounts/million reads only (the "rpm" method is not recommended except for the very rare cases in which a Dam-fusion protein fails to methylate accessible genomic regions, making kde normalisation is inappropriate)
 *  Re-written --help output rountines (better formatted and more informative)
 *  Ability to read gzipped GATC files
 *  Ability to save sets of defaults to enable quick switching between different genomes  (use --save_defaults=[name]; use --load_defaults=[name] to load; use load_defaults=list to list current available options)

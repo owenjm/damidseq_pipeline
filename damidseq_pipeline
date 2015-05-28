@@ -22,10 +22,10 @@ use File::Copy;
 
 $|++;
 
-my $version = "1.2pre3";
-print STDERR "\nDamID-seq pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
+my $version = "1.2pre4";
+print STDERR "\ndamidseq_pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
 
-# Global parameters
+# Global options
 my %vars = (
 	'bowtie' => 1,
 	'bamfiles' => 0,
@@ -52,6 +52,7 @@ my %vars = (
 	'max_norm_value' => 5,
 	'norm_steps' => 300,
 	'just_align' => 0,
+	'norm_method' => 'kde',
 	'save_defaults' => 0,
 	'load_defaults' => '',
 	'reset_defaults' => 0,
@@ -84,6 +85,7 @@ my %vars_details = (
 	'max_norm_value' => 'Maximum log2 value to limit normalisation search at (default = +5)',
 	'norm_steps' => 'Number of points in normalisation routine (default = 300)',
 	'just_align' => 'Just align the FASTQ files, generate BAM files, and exit',
+	'norm_method' => "Normalisation method to use; options are:\n\rkde: use kernel density estimation of log2 GATC fragment ratio (default)\n\rrpm: use readcounts per million reads (not recommended for most use cases)",
 	'save_defaults' => "Save runtime parameters as default\n\r(provide a name to differentiate different genomes -- these can be loaded with 'load_defaults')",
 	'load_defaults' => "Load this saved set of defaults\n\r(use 'list' to list current saved options)",
 	'reset_defaults' => 'Delete user-defined parameters',
@@ -128,7 +130,6 @@ read_defaults();
 parameter_check();
 process_cli(1);
 
-
 # CLI processing
 check_paths();
 save_defaults();
@@ -151,15 +152,15 @@ calc_bins();
 
 exit 0 if $vars{'just_align'};
 
-for my $i (keys %files) {
-	find_quants($i);
+if ($vars{'norm_method'} eq 'kde') {
+	find_quants();
+	find_norm_factor();
 }
 
-find_norm_factor();
 normalize();
 generate_ratio();
 
-printout("All done.\n\n");
+printout("\nAll done.\n\n");
 
 exit 0;
 
@@ -242,8 +243,10 @@ sub process_input_files {
 	# CLI files 
 	# if no files specified, process all .gz files in directory.
 	unless (@in_files) {
-		printout("Searching for files ...\n");
-		@in_files = glob("*.fastq.gz") || glob("*.gz") || glob("*.fastq") || glob("*.bam");
+		@in_files = glob("*.fastq.gz");
+		@in_files = glob("*.gz") unless scalar(@in_files);
+		@in_files = glob("*.fastq") unless scalar(@in_files);
+		@in_files = glob("*.bam") unless scalar(@in_files);
 		if ($vars{'bamfiles'}) {
 			@in_files = glob("*.bam");
 		}
@@ -253,7 +256,7 @@ sub process_input_files {
 		printout("ERROR: no FASTQ or BAM files found (and no files specified on the command-line).\n(Use --help to see command-line options ...)\n\n")
 	}
 	
-	printout("\n*** Reading data files ...\n");
+	printout("*** Reading data files ***\n");
 	
 	my $index_txt_error = <<EOT;
 The pipeline script requires a single tab-delimited file named index.txt that lists sequencing adaptors with sample names -- for e.g.:
@@ -267,7 +270,8 @@ EOT
 	if ($vars{'bamfiles'}) {
 		# Bamfiles
 		foreach my $l (@in_files) {
-			my ($name) = $l =~ m/(.*?)[-|\.].*bam/i;
+			my ($name) = $l =~ m/(.*?)[_|\.].*bam/i;
+			$name =~ s/-ext\d+//; # remove extensions from the name
 			print "$name\t$l\n";
 			$files{$name}[0]=$l;
 			if ($name =~ m/^dam/i) {
@@ -309,7 +313,7 @@ EOT
 			$index{$i_num}=$name;
 		}
 		
-		printout("\n*** Matching adaptors ...\n");
+		printout("\n*** Matching adaptors ***\n");
 		foreach my $l (@in_files) {
 			print "$l\n";
 			
@@ -455,11 +459,11 @@ sub parameter_check {
 sub align_sequences {
 	if ($vars{'bowtie'}) {
 		
-		printout("\n\n*** Aligning files with bowtie2 ...\n");
+		printout("\n*** Aligning files with bowtie2 ***\n");
 		foreach my $fn (keys %files) {
 			my $pair1 = $files{$fn}[0];
 			
-			printout("\nNow working on $fn ...\n");
+			printout("Now working on $fn ...\n");
 			
 			if ($vars{'bowtie'}) {
 				$bowtie_output{$fn} = `$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S $fn.sam 2>&1`;
@@ -472,12 +476,12 @@ sub align_sequences {
 sub extend_reads {
 	# Extend reads
 	if ($vars{'extend_reads'}) {
-		printout("\n*** Extending reads to $vars{'len'} bases ...\n\n");
+		printout("*** Extending reads to $vars{'len'} bases ***\n");
 		foreach my $fn (keys %files) {
 			printout("Reading input file: $fn ...\n");
 			open (IN, "<$fn.sam") || die "Unable to read $fn: $!\n";
 			
-			printout("Processing data ...\n");
+			printout("  Processing data ...\n");
 			open (OUT, ">$fn-ext$vars{'len'}.sam");
 			
 			my $c=0;
@@ -488,7 +492,7 @@ sub extend_reads {
 				
 				$c++;
 				unless ($c%100000) {
-					print "$c lines processed ...\r";
+					print "  $c lines processed ...\r";
 				}
 				
 				unless ($seq) {
@@ -513,13 +517,13 @@ sub extend_reads {
 			# the original SAM files are huge, so we nuke them
 			unlink("$fn.sam");
 			
-			printout("Seqs extended (>q30) = $seqs\n\n");
+			printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n");
 		}
 	}
 }
 
 sub calc_bins {
-	printout("\n*** Calculating bins ...");
+	printout("\n*** Calculating bins ***");
 	foreach my $n (keys %files) {
 		my $fn = $vars{'bamfiles'} ? $files{$n}[0] : "$n-ext$vars{'len'}";
 		$fn =~ s/\.bam$//;
@@ -556,7 +560,7 @@ sub calc_bins {
 		# We now use manually calculate coverage, rather than using bedtools' -coverage option, for both memory considerations and ease of use.
 		# (bedtools' -coverage memory consumption is pretty crazy, getting up to 8Gb for ~25M reads ... this implementation uses about 1/10th of that memory.)
 		# Speed considerations are similar (this is seems to be slightly faster ...)
-		open(COV, "samtools view -h $fn.bam |") || die ("Error: unable to open bamfile $!\n");
+		open(COV, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die ("Error: unable to open bamfile $!\n");
 		while (<COV>) {
 			chomp();
 			$lines++;
@@ -589,6 +593,7 @@ sub calc_bins {
 		
 		my $read_bins=0;
 		foreach my $chr (keys %cov) {
+			next unless $bases{$chr};
 			for (my $bin = 0; $bin < $bases{$chr}+$vars{'bins'}; $bin += $vars{'bins'}) {
 				# need to fill every bin ...
 				$read_bins++;
@@ -596,27 +601,22 @@ sub calc_bins {
 				my $score = $cov{$chr}{$bin} || 0;
 				
 				push @{$gff{$chr}}, [$bin, $end, $score];
-				push @{$full_tracks{$n}}, [$chr, $bin, $end, $score] if $vars{'full_data_files'};
+				if ($vars{'full_data_files'}) {
+					$full_tracks{$chr}{$bin}{$n} = $score;
+					$full_tracks{$chr}{$bin}{'end'} = $end unless $full_tracks{$chr}{$bin}{'end'};
+				}
 			}
 		}
-		
-		printout("  Sorting ...                 \n");
-		my %tmp_gff;
-		foreach my $k (keys %gff) {
-			@{$tmp_gff{$k}} = sort { $a->[0] <=> $b->[0] } @{$gff{$k}};
-		}
-		%gff = %tmp_gff;
-	
 		
 		$bins{$n} = $read_bins;
 		
 		my $gatc_nonhits = 0;
-					
 		my $index = 0;
 		
+		printout("  Converting to GATC resolution ...                 \n");
 		foreach my $chr (keys %gff) {
 			unless ($gatc{$chr}) {
-				print STDERR "  Warning: GFF file contains chromosome identity ($chr) not found in GATC file.\n";
+				print STDERR "  Warning: alignment contains chromosome identity ($chr) not found in GATC file.\n";
 				next;
 			}
 			
@@ -665,7 +665,8 @@ sub calc_bins {
 				
 				push(@{$gatc_frags{"$chr-$mida-$midb"}}, $n);
 				$gatc_frag_score{"$chr-$mida-$midb"}{$n}=$mean;
-				push @{$array{$n}}, [ $chr, $mida, $midb, $mean];
+				$array{$chr}{$mida}{$n} = $mean;
+				$array{$chr}{$mida}{'end'} = $midb unless $array{$chr}{$mida}{'end'};
 			}
 		} 
 		printout("\n");
@@ -673,34 +674,48 @@ sub calc_bins {
 }
 
 sub normalize {
-	printout("\n*** Normalising counts and adding background ...\n");
+	printout("\n*** Normalising ***\n");
 	foreach my $n (keys %files) {
-		printout("\nProcessing input: $n ...\n");
+		printout("Processing input: $n ...\n");
 		
 		my $norm;
 		unless ($n =~ m/^dam$/i) {
 			if ($vars{'norm_override'}) {
 				printout("Normalisation override!\n  Would have normalised by $norm_factors{$n}\n  ... will instead normalise by $vars{'norm_override'}\n");
 				$norm = $vars{'norm_override'};
-			} elsif ($vars{'rpm_norm'}) {
+			} elsif ($vars{'norm_method'} eq 'rpm') {
 				# RPM normalisation goes here ...
-				
+				printout("  (using RPM normalisation ...)\n");
+				$norm = $counts{$n}/$counts{$damname};
+				printout("  ... normalising by ".sprintf("%0.2f",$norm)."\n");
 			} else {
-				printout("  ... normalising by $norm_factors{$n}\n");
 				$norm = $norm_factors{$n};
+				printout("  ... normalising by ".sprintf("%0.2f",$norm)."\n");
 			}
 		}
 		
-		# move pseudocounts into ratio generation routine ...
-		foreach (@{$array{$n}}) {
-			@{$_}[3] *= $norm unless $n =~ m/^dam$/i;
-			# @{$_}[3] += $pseudocounts;
+		next if $n =~ m/^dam$/i; # we don't normalise the Dam control
+		
+		foreach my $chr (keys %array) {
+			print "ERROR!!!  woot!: $chr\n" unless defined($array{$chr});
+			foreach my $bin (keys %{ $array{$chr}}) {
+				if (defined($array{$chr}{$bin}{$n})) {
+					$array{$chr}{$bin}{$n} *= $norm;
+				} else {
+					$array{$chr}{$bin}{$n} = 0;
+				}
+			}
 		}
 		
 		if ($vars{'full_data_files'}) {
-			foreach (@{$full_tracks{$n}}) {
-				@{$_}[3] *= $norm unless $n =~ m/^dam$/i;
-				# @{$_}[3] += $pseudocounts;
+			foreach my $chr (keys %full_tracks) {
+				foreach my $bin (keys %{ $full_tracks{$chr}}) {
+					if (defined($full_tracks{$chr}{$bin}{$n})) {	
+						$full_tracks{$chr}{$bin}{$n} *= $norm;
+					} else {
+						$full_tracks{$chr}{$bin}{$n} = 0;
+					}
+				}
 			}
 		}
 	}
@@ -714,11 +729,11 @@ sub printout {
 
 
 sub generate_ratio {
-	printout("\n\n*** Generating ratios ...\n");
+	printout("\n*** Generating ratios ***\n");
 	foreach my $n (keys %files) {
 		next if $n =~ m/^dam$/i;
 		
-		printout("\nNow working on $n ...\n"); 
+		printout("Now working on $n ...\n"); 
 
 		write_file($n, 1);
 		write_file($n, 0) if $vars{'full_data_files'};
@@ -738,16 +753,21 @@ sub write_file {
 	my $dref = ($write_gatcs ? \%array : \%full_tracks);
 	
 	printout("  Reading Dam ...\n");
-	foreach (@{ $dref -> {$damname}}) {
-		my ($chr, $start, $end, $score) = @{$_};
-		push @{ $data{$chr}{$start}}, $end;
-		push @{ $data{$chr}{$start}}, $score;
+	foreach my $chr (keys %$dref) {
+		foreach my $start (keys %{ $dref -> {$chr}}) {
+			my $score = $dref -> {$chr} -> {$start} -> {$damname};
+			my $end   = $dref -> {$chr} -> {$start} -> {'end'};
+			push @{ $data{$chr}{$start}}, $end;
+			push @{ $data{$chr}{$start}}, $score;
+		}	
 	}
 
 	printout("  Reading $n ...\n");
-	foreach (@{ $dref-> {$n}}) {
-		my ($chr, $start, $end, $score) = @{$_};
-		push @{ $data{$chr}{$start}}, $score;
+	foreach my $chr (keys %$dref) {
+		foreach my $start (keys %{ $dref -> {$chr}}) {
+			my $score = $dref -> {$chr} -> {$start} -> {$n};
+			push @{ $data{$chr}{$start}}, $score;
+		}	
 	}
 	
 	my $track_type = $write_gatcs ? 'gatc.' : '';
@@ -800,7 +820,7 @@ sub generate_score {
 }
 
 sub find_norm_factor {
-	printout("\n\n*** Calculating normalisation factor ...\n");
+	printout("*** Calculating normalisation factor ***\n");
 		
 	foreach my $n (keys %files) {
 		printout("Now working on $n ...\n");
@@ -847,7 +867,7 @@ sub find_norm_factor {
 		}
 		
 		my $norm = 1/$avg;
-		printout("  Norm factor = $norm based off $total_measurements frags (total $total_frags)\n");
+		printout("  Norm factor = ".sprintf("%0.2f",$norm)." based off $total_measurements frags (total $total_frags)\n");
 		$norm_factors{$n}=$norm;
 	}
 }
@@ -867,36 +887,34 @@ sub qsc {
 
 
 sub find_quants {
-	my $prot = shift;
-	my @frags;
+	printout("\n*** Calculating quantiles ***\n");
+	for my $prot (keys %files) {
+		my @frags;
+				
+		printout("Now working on $prot ...\n");
 	
-	my $total_coverage;
-	
-	printout("\nNow working on $prot ...\n");
-
-	foreach my $k (keys %gatc_frag_score) {
-		my $score = $gatc_frag_score{$k}{$prot} || 0;
+		foreach my $k (keys %gatc_frag_score) {
+			my $score = $gatc_frag_score{$k}{$prot} || 0;
+			next unless $score > 0; # use only non-zero elements of the array
+			push (@frags, $score);
+		}
 		
-		#sprint "$k $prot $score\n";
+		printout("Sorting frags ...\n");
+		@frags = sort {$a <=> $b} @frags;
 		
-		next unless $score > 0; # use only non-zero elements of the array
-		push (@frags, $score);
-	}
-	
-	printout("Sorting frags ...\n");
-	my @sorted_frags = sort {$a <=> $b} @frags;
-	
-	my @quants;
-	for (my $q=0.1;$q<=1;$q+=0.1) {
-		push @quants, [$q, int($q * @sorted_frags)];
-	}
-	
-	printout("Finding quants ...\n");
-	foreach  (@quants) {
-		my $cut_off = @{$_}[0];
-		my $score = $sorted_frags[@{$_}[1]];
-		printout("   Quant $cut_off:".sprintf("%0.2f",$score)."\n");
-		$seg{$cut_off}{$prot} = $score;
+		my @quants;
+		for (my $q=0.1;$q<=1;$q+=0.1) {
+			push @quants, [$q, int($q * @frags)];
+		}
+		
+		foreach  (@quants) {
+			my $cut_off = @{$_}[0];
+			my $score = $frags[@{$_}[1]];
+			printout("   Quantile ".sprintf("%0.1f",$cut_off).": ".sprintf("%0.2f",$score)."\n");
+			$seg{$cut_off}{$prot} = $score;
+		}
+		
+		printout("\n");
 	}
 }
 
@@ -1036,22 +1054,13 @@ sub help {
 	
 	my $cols= `tput cols` || 80;
 	
-	my ($v, $val, $def, $def_format, $current);
-	my $curr_len = 40;
+	my ($v, $val, $def, $def_format);
 	my $help_format = "format STDOUT =\n"
 		.' '.'^'.'<'x$opt_len . ' '. '^' . '<'x($cols-$opt_len-4) . "\n"
 		.'$v, $def_format'."\n"
 		.' '.'^'.'<'x$opt_len . '   '. '^' . '<'x($cols-$opt_len-6) . "~~\n"
 		.'$v, $def_format'."\n"
 		.".\n";
-		
-	#my $help_format = "format STDOUT =\n"
-	#.' '.'^'.'<'x$opt_len . ' '. '^'.'<'x($cols-$opt_len-4-2-$curr_len) . '^'.'<'x($curr_len-2)."\n"
-	#.'$v, $def_format, $val'."\n"
-	#.' '.'^'.'<'x$opt_len . '   '. '^'.'<'x($cols-$opt_len-6-2-$curr_len) . '^'.'<'x($curr_len-2). "~~\n"
-	#.'$v, $def_format, $val'."\n"
-	#.".\n";
-		
 		
 	eval $help_format;
 	die $@ if $@;
@@ -1068,7 +1077,7 @@ sub help {
 }
 
 sub load_gatc_frags {
-	printout("\n*** Reading GATC file ...\n");
+	printout("\n*** Reading GATC file ***\n");
 	
 	if ($vars{'gatc_frag_file'} =~ m/\.gz$/) {
 		# gzipped file
@@ -1076,9 +1085,7 @@ sub load_gatc_frags {
 	} else {
 		open (GATC, "<$vars{'gatc_frag_file'}") || die "Error: cannot open GATC file $vars{'gatc_frag_file'}: $!\n\n";
 	}
-	
-	#open (GATC, "<","$vars{'gatc_frag_file'}") || die "Unable to read GATC file: $!\n";
-	
+		
 	foreach (<GATC>) {
 		my ($chr, $source, $type, $start, $end, $score, $b, $c, $name) = split('\t');
 		my $mid = ($start+$end)/2;
@@ -1087,7 +1094,7 @@ sub load_gatc_frags {
 	}
 	close GATC;
 	
-	print STDERR "Sorting ...\n";
+	print STDERR "  Sorting ...\n";
 	my %tmp;
 	foreach my $k (keys %gatc) {
 		@{$tmp{$k}} = sort { $a <=> $b } @{$gatc{$k}};
@@ -1100,7 +1107,7 @@ sub init_log_file {
 	open (STATS, ">pipeline-$date.log") || die "Could not open bowtie output file for writing: $!\n";
 	my $args = join("|",@cli);
 	
-	printout("Version $version\n\n");
+	print STATS "damidseq_pipeline v$version\n";
 	print STATS "Command-line options: @ARGV\n\n";
 }
 
