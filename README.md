@@ -2,7 +2,7 @@
 
 Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary and adding pseudocounts to mitigate the effect of background counts is highly recommended.
 
-The damidseq_pipeline is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in GFF or bedGraph format. These files can easily be converted to TDF for viewing in [IGV](http://www.broadinstitute.org/software/igv/) with the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script (see below).
+damidseq_pipeline is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in GFF or bedGraph format. These files can easily be converted to TDF for viewing in [IGV](http://www.broadinstitute.org/software/igv/) with the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script (see below).
 
 ### Download
 
