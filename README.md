@@ -7,8 +7,8 @@ We use a single pipeline script to handle sequence alignment, read extension, bi
 ### Download
 
 Download the latest version of the pipeline script and associated files:
-* [As a zipfile](https://github.com/owenjm/damidseq_pipeline/zipball/master)
 * [As a tarball](https://github.com/owenjm/damidseq_pipeline/tarball/master)
+* [As a zipfile](https://github.com/owenjm/damidseq_pipeline/zipball/master)
 
 Prebuilt GATC fragment files used by the script are available for the following genomes:
 * [*Drosophila melanogaster* r5.57](https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz)
@@ -26,7 +26,7 @@ Prebuilt GATC fragment files used by the script are available for the following 
 
 ### Installation
 
-1. Unzip the pipeline script zip file, make the damid_pipeline.pl file executable and place it in your path
+1. Extract the pipeline script archive, make the damid_pipeline file executable and place it in your path
 1. Install [Bowtie 2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 1. Obtain Bowtie 2 indices provided by [Bowtie 2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) or [Illumina's iGenome](http://support.illumina.com/sequencing/sequencing_software/igenome.html)
 
@@ -69,7 +69,7 @@ In order to run correctly, the script needs to know the locations of two paths, 
 
 In order to setup the pipeline to process the *D. melanogaster* genome, for example, the first-run command would be:
 
-    damidseq_pipeline.pl --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
+    damidseq_pipeline --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
 
 If these paths do not already exist and the script is run with these options and correct values, the paths will be saved for all future runs unless overridden on the command-line.
 
@@ -83,13 +83,13 @@ The script will by default determine sample names from the file names, and expec
 
 To see all available options, run the script with --help command-line option:
 
-    damidseq_pipeline.pl --help
+    damidseq_pipeline --help
 
 This will give you a list of adjustable parameters and their default and current values if applicable. We recommend keeping these at the default value in most cases; however, these can be modified on the command-line with --option=value (no spaces).
 
 To save modified values for all future runs, run the script with the parameter you wish to change together with the --save_defaults command-line option:
 
-    damidseq_pipeline.pl --save_defaults
+    damidseq_pipeline --save_defaults
 
 If bowtie2 and samtools are not in your path, you can specify these on the command-line also.
 
@@ -105,12 +105,12 @@ Either file can be converted to .tdf format for viewing in [IGV](http://www.broa
 
 If the user expects to process data from multiple genomes, separate genome specifications can be saved by using the --save_defaults=[name] along with the --bowtie2_genome_dir and --gatc_frag_file options (and any other custom options that the user wishes to set as default for this genome, e.g. the bin width).  For e.g.:
 
-    damidseq_pipeline.pl --save_defaults=fly --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
-    damidseq_pipeline.pl --save_defaults=mouse --bins=500 --gatc_frag_file=path/to/MmGRCm38.GATC.gff.gz --bowtie2_genome_dir=path/to/Mm_GRCm38/GRCm38
+    damidseq_pipeline --save_defaults=fly --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
+    damidseq_pipeline --save_defaults=mouse --bins=500 --gatc_frag_file=path/to/MmGRCm38.GATC.gff.gz --bowtie2_genome_dir=path/to/Mm_GRCm38/GRCm38
 
 Once set up, different genome definitions can be quickly loaded using the --load_defaults=[name] option, e.g.:
 
-    damidseq_pipeline.pl --load_defaults=fly
+    damidseq_pipeline --load_defaults=fly
 
 All currently saved genome definitions can be listed using --load_defaults=list.
 
