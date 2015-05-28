@@ -31,11 +31,11 @@ Prebuilt GATC fragment files used by the script are available for the following 
 1. Obtain Bowtie 2 indices provided by [Bowtie 2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) or [Illumina's iGenome](http://support.illumina.com/sequencing/sequencing_software/igenome.html)
 
     Alternatively, build the Bowtie 2 index files manually:
-    1. Download the latest FASTA genome primary_assembly (or toplevel) file from [Ensembl](ftp.ensembl.org/pub/current_fasta/)
+    1. Download the latest FASTA genome primary_assembly (or toplevel) file from [Ensembl](http://ftp.ensembl.org/pub/current_fasta/)
         e.g. [the current release for *Mus musculus*](http://ftp.ensembl.org/pub/current_fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz)
         
-        (alternatively, for *Drosophila*, download from the [Flybase FTP site](http://ftp.flybase.net/releases/current/)
-         e.g. [*D. melanogaster* release 5.57](http://ftp.flybase.net/releases/FB2014_03/dmel_r5.57/fasta/dmel-all-chromosome-r5.57.fasta.gz))
+        (alternatively, for *Drosophila*, download from the [Flybase FTP site](ftp://ftp.flybase.net/releases/current/)
+         e.g. [*D. melanogaster* release 5.57](ftp://ftp.flybase.net/releases/FB2014_03/dmel_r5.57/fasta/dmel-all-chromosome-r5.57.fasta.gz))
     1. Extract the .gz file
     1. Run bowtie2-build in the directory containing the extracted .fasta file. For the examples above:
 
