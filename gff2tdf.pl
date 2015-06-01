@@ -5,8 +5,6 @@ unless (@ARGV) {
 	help();
 }
 
-# Path to IGVtools
-# leave blank if igvtools executable (and igvtools.jar) are in your path
 my %vars = (
 	'genome' => 'dmel_r5.33',
 	'igvpath' => '',
@@ -73,6 +71,7 @@ sub convert {
 				my ($ref,$start,$end,$score) = (split)[0,3,4,5];
 				next if $ref =~ m/^#/;
 				next if $score =~ m/inf/i;
+				next if $score =~ m/NA/i;
 		
 				$ref =~ s/CHROMOSOME_|chr//;
 				$ref = "chr".$ref;
@@ -98,7 +97,7 @@ sub convert {
 		
 		`$igvtools toTDF $in $fhead.tdf $vars{'genome'}`;
 		
-		unlink("$fhead.bedgraph")
+		unlink("$fhead.bedgraph") if $vars{'format'} eq 'gff'; 
 	}
 }
 

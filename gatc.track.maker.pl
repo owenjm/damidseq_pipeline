@@ -2,7 +2,6 @@
 use strict;
 $|++;
 
-# Optional commandline input is the organism name
 my @in_files;
 
 my %vars = (
@@ -51,8 +50,6 @@ sub motif_hash {
 
 sub generate_track {
 	my $fn = shift;
-	
-	# Clumsy hack to get the organism details
 	my $chr;
 	
 	# open output files
@@ -91,7 +88,6 @@ sub generate_track {
 			$in = "";
 			next;
 		}
-		
 		chomp;
 		$in .= $_;
 	}
@@ -103,7 +99,6 @@ sub generate_track {
 	}
 	
 	close FN;	
-	
 	close TRACK;
 }
 
