@@ -22,7 +22,7 @@ use File::Copy;
 
 $|++;
 
-my $version = "1.2pre4";
+my $version = "1.2";
 print STDERR "\ndamidseq_pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
 
 # Global options
@@ -899,7 +899,7 @@ sub find_quants {
 			push (@frags, $score);
 		}
 		
-		printout("Sorting frags ...\n");
+		printout("Sorting ...\n");
 		@frags = sort {$a <=> $b} @frags;
 		
 		my @quants;
