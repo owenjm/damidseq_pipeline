@@ -543,7 +543,7 @@ sub calc_bins {
 		
 		$counts{$n}=$seqs;
 		printout("  $seqs reads\n");
-		if ($n =~ m/^dam$/i) {
+		if ($n eq $damname) {
 			$denom = $counts{$n};
 		}
 		
@@ -679,7 +679,7 @@ sub normalize {
 		printout("Processing input: $n ...\n");
 		
 		my $norm;
-		unless ($n =~ m/^dam$/i) {
+		unless ($n eq $damname) {
 			if ($vars{'norm_override'}) {
 				printout("Normalisation override!\n  Would have normalised by $norm_factors{$n}\n  ... will instead normalise by $vars{'norm_override'}\n");
 				$norm = $vars{'norm_override'};
@@ -694,7 +694,7 @@ sub normalize {
 			}
 		}
 		
-		next if $n =~ m/^dam$/i; # we don't normalise the Dam control
+		next if $n eq $damname; # we don't normalise the Dam control
 		
 		foreach my $chr (keys %array) {
 			print "ERROR!!!  woot!: $chr\n" unless defined($array{$chr});
@@ -731,7 +731,7 @@ sub printout {
 sub generate_ratio {
 	printout("\n*** Generating ratios ***\n");
 	foreach my $n (keys %files) {
-		next if $n =~ m/^dam$/i;
+		next if $n eq $damname;
 		
 		printout("Now working on $n ...\n"); 
 
@@ -825,7 +825,7 @@ sub find_norm_factor {
 	foreach my $n (keys %files) {
 		printout("Now working on $n ...\n");
 		
-		next if $n =~ m/^dam$/i;
+		next if $n eq $damname;
 		my @ratios;
 		my $total_frags;
 		foreach my $key (keys %gatc_frag_score) {
