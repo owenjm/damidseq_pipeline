@@ -584,7 +584,7 @@ sub calc_bins {
 			# break into bins
 			my $start =  int($pos/$vars{'bins'});
 			my $end =  int(($pos + $len)/$vars{'bins'});
-						
+									
 			foreach my $bin ($start .. $end) {
 				$cov{$chr}{$bin*$vars{'bins'}}++;
 			}	
@@ -661,7 +661,7 @@ sub calc_bins {
 					$gatc_nonhits++;
 					next;
 				}
-				my ($mean, $sd, $se) = stdev(@data);
+				my $mean = mean(@data);
 				
 				push(@{$gatc_frags{"$chr-$mida-$midb"}}, $n);
 				$gatc_frag_score{"$chr-$mida-$midb"}{$n}=$mean;
@@ -676,28 +676,23 @@ sub calc_bins {
 sub normalize {
 	printout("\n*** Normalising ***\n");
 	foreach my $n (keys %files) {
-		printout("Processing input: $n ...\n");
+		next if $n eq $damname; # we don't normalise the Dam control
+		printout("Processing sample: $n ...\n");
 		
 		my $norm;
-		unless ($n eq $damname) {
-			if ($vars{'norm_override'}) {
-				printout("Normalisation override!\n  Would have normalised by $norm_factors{$n}\n  ... will instead normalise by $vars{'norm_override'}\n");
-				$norm = $vars{'norm_override'};
-			} elsif ($vars{'norm_method'} eq 'rpm') {
-				# RPM normalisation goes here ...
-				printout("  (using RPM normalisation ...)\n");
-				$norm = $counts{$n}/$counts{$damname};
-				printout("  ... normalising by ".sprintf("%0.2f",$norm)."\n");
-			} else {
-				$norm = $norm_factors{$n};
-				printout("  ... normalising by ".sprintf("%0.2f",$norm)."\n");
-			}
+		if ($vars{'norm_override'}) {
+			printout("Normalisation override!\n  Would have normalised by $norm_factors{$n}\n  ... will instead normalise by $vars{'norm_override'}\n");
+			$norm = $vars{'norm_override'};
+		} elsif ($vars{'norm_method'} eq 'rpm') {
+			printout("  (using RPM normalisation ...)\n");
+			$norm = $counts{$n}/$counts{$damname};
+			printout("  ... normalising by ".sprintf("%0.2f",$norm)."\n");
+		} else {
+			$norm = $norm_factors{$n};
+			printout("  ... normalising by ".sprintf("%0.2f",$norm)."\n");
 		}
 		
-		next if $n eq $damname; # we don't normalise the Dam control
-		
 		foreach my $chr (keys %array) {
-			print "ERROR!!!  woot!: $chr\n" unless defined($array{$chr});
 			foreach my $bin (keys %{ $array{$chr}}) {
 				if (defined($array{$chr}{$bin}{$n})) {
 					$array{$chr}{$bin}{$n} *= $norm;
@@ -823,11 +818,13 @@ sub find_norm_factor {
 	printout("*** Calculating normalisation factor ***\n");
 		
 	foreach my $n (keys %files) {
+		next if $n eq $damname;
+		
 		printout("Now working on $n ...\n");
 		
-		next if $n eq $damname;
 		my @ratios;
 		my $total_frags;
+		my (@a, @b);
 		foreach my $key (keys %gatc_frag_score) {
 			$total_frags++;
 			my %score;
@@ -847,14 +844,26 @@ sub find_norm_factor {
 				} else {
 					push @ratios, log($score{2}/$score{1})/log(2);
 				}
+				push @a, $score{1};
+				push @b, $score{2};
 			}
 			
 		}
+		
+		print STDOUT "  Calculating correlation ...\r";
+		my $cor = spearmans(\@a, \@b);
+		$cor = sprintf("%0.2f",$cor);
+		printout("  Spearman's correlation: $cor  \n");
+		
+		if ($cor < 0.4) {
+			printout ("  *** Warning: low correlation -- kernel density estimation may not be the best normalisation method for this dataset.  Consider using readcount normalisation instead (using --norm_method=rpm) ...\n\n");
+		}
+		
 		my $total_measurements = @ratios;
 		
 		my $avg;
 		if ($vars{'old_norm_method'}) {
-			$avg = stdev(@ratios);
+			$avg = mean(@ratios);
 		} else {
 			# new normalisation method finds the maximum of the gaussian kernel density estimate of log2 ratio data
 			$avg = 2**kdenmax(@ratios);
@@ -1040,13 +1049,69 @@ sub min {
     return ($index, $min);
 }
 
+sub spearmans {
+	my @a = @{$_[0]};
+	my @b = @{$_[1]};
+	
+	my @sa = rank_sort(@a);
+	my @sb = rank_sort(@b);
+
+	my $di2sum;	
+	my $n = @sa;
+	
+	map {$di2sum += ($sa[$_]-$sb[$_])**2} (0 .. $#sa);
+	my $rho = 1 - (6*$di2sum)/($n*($n**2 - 1));
+	
+	return $rho;
+}
+
+sub rank_sort {
+	my @a = @_;
+	my @sa = sort {$a <=> $b} @a;
+	
+	# fast but inelegant:
+	my $last_score=0;
+	my $start;
+	my %rsh;
+	foreach my $i (0 .. $#sa) {
+		my $sc = $sa[$i];
+		
+		if ($sc == $last_score) {
+			$start ||= $i-1;
+			$rsh{$sc} = ($i+$start)/2;
+		} else {
+			$start = "";
+			$rsh{$sc} = $i;
+		}
+		
+		$last_score=$sc;
+	}
+	
+	my @rs = map { $rsh{$_} } @a;
+	return @rs;
+}
+
+sub mean {
+	my @a = @_;
+	my $n = @a;
+	return $a[0] if $n<2;
+	
+	my $total;
+	foreach (@a) {
+		$total+=$_;
+	}
+	my $mean = $total/$n;
+	
+	return $mean;
+}
+
+
 sub help {
 	print STDERR "Options:\n";
 	
 	my $opt_len = 0;
 	foreach (keys %vars) {
 		my $l = length($_);
-		#print "--> $_: $l\n";
 		$opt_len = $l if $l > $opt_len;
 	}
 	
