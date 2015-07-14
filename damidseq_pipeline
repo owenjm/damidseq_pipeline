@@ -19,10 +19,11 @@
 
 use strict;
 use File::Copy;
+use 5.010;
 
 $|++;
 
-my $version = "1.2";
+my $version = "1.2.1";
 print STDERR "\ndamidseq_pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
 
 # Global options
@@ -532,26 +533,32 @@ sub calc_bins {
 		
 		unless ($vars{'bamfiles'}) {
 			printout("Generating .bam file ...\n");
-			`$vars{'samtools_path'}samtools view -Sb $fn.sam > $fn.bam`;
+			`$vars{'samtools_path'}samtools view -Sb $fn.sam > $fn.unsort.bam`;
 			
 			unlink("$fn.sam");
+			
+			# sort the bam file ...
+			printout("  sorting ...\n");
+			`$vars{'samtools_path'}samtools sort $fn.unsort.bam $fn`;
+			
+			unlink("$fn.unsort.bam");
 		}
 		
 		# Obtain readcounts via samtools ...
-		my $seqs = `$vars{'samtools_path'}samtools view -c -F 4 $fn.bam`;
+		my $seqs = `$vars{'samtools_path'}samtools view -c $fn.bam`;
 		chomp($seqs);
 		
 		$counts{$n}=$seqs;
 		printout("  $seqs reads\n");
-		if ($n eq $damname) {
-			$denom = $counts{$n};
-		}
 		
 		# short-circuit for just_align option
 		next if $vars{'just_align'};
+		
+		if ($n eq $damname) {
+			$denom = $counts{$n};
+		}
 				
 		printout("  Generating bins from $fn.bam ...\n");
-		
 		
 		my %cov;
 		my %gff;
@@ -564,8 +571,9 @@ sub calc_bins {
 		while (<COV>) {
 			chomp();
 			$lines++;
-			my ($ref, $bit, $chr, $pos, $q, $len) = split(/\t/);
-			unless ($len) {
+			my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split(/\t/);
+			#say "$chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen";
+			unless ($cigar) {
 				if (m/\@SQ\s+SN:([\d|\w]+)\s+LN:(\d+)/) {
 					# Grab chromosome sizes from BAM file
 					my ($chr, $size) = ($1, $2);
@@ -574,7 +582,20 @@ sub calc_bins {
 				next;
 			}
 			
-			$len =~ s/[^\d]//g;
+			next if $cigar eq "*";
+			
+			my ($pstart, $pend);
+			if ($pnext) {
+				# paired ends
+				next unless $tlen && abs($tlen) < 1500;
+				next unless $rnext eq '=';
+				($pstart, $pend) = sort($pos, $pos + $tlen);
+			} else {
+				# single ends
+				$cigar =~ s/[^\d]//g;
+				$pstart = $pos;
+				$pend = $pos+$cigar;
+			}
 			
 			if ($lines % 20000 == 0) {
 				my $pc = sprintf("%0.1f", ($lines*100 / $counts{$n}));
@@ -582,8 +603,8 @@ sub calc_bins {
 			}
 						
 			# break into bins
-			my $start =  int($pos/$vars{'bins'});
-			my $end =  int(($pos + $len)/$vars{'bins'});
+			my $start =  int($pstart/$vars{'bins'});
+			my $end =  int($pend/$vars{'bins'});
 									
 			foreach my $bin ($start .. $end) {
 				$cov{$chr}{$bin*$vars{'bins'}}++;
@@ -612,11 +633,12 @@ sub calc_bins {
 		
 		my $gatc_nonhits = 0;
 		my $index = 0;
+		my @non_chrs;
 		
 		printout("  Converting to GATC resolution ...                 \n");
 		foreach my $chr (keys %gff) {
 			unless ($gatc{$chr}) {
-				print STDERR "  Warning: alignment contains chromosome identity ($chr) not found in GATC file.\n";
+				push @non_chrs, $chr;
 				next;
 			}
 			
@@ -668,7 +690,14 @@ sub calc_bins {
 				$array{$chr}{$mida}{$n} = $mean;
 				$array{$chr}{$mida}{'end'} = $midb unless $array{$chr}{$mida}{'end'};
 			}
-		} 
+		}
+		
+		if (@non_chrs) {
+			my $missing = join(', ', @non_chrs);
+			print STDERR "  Warning: alignment contains chromosome identities not found in GATC file (see log file for details\n";
+			print LOG "  Warning: alignment contains chromosome identities not found in GATC file\n  $missing\n  (This is normal for small assembly fragments)\n";
+		}
+		
 		printout("\n");
 	}
 }
@@ -719,7 +748,7 @@ sub normalize {
 sub printout {
 	my $s = shift;
 	print STDERR $s;
-	print STATS $s;
+	print LOG $s;
 }
 
 
@@ -773,7 +802,7 @@ sub write_file {
 	my $print_psc = sprintf("%0.2f",$pseudocounts);
 	printout("  ... adding $print_psc pseudocounts to each sample\n");
 	
-	open (OUT, ">$fout") || die "Unable to open $fout for writing: $!\n";
+	open (OUT, '>', $fout) || die "Unable to open $fout for writing: $!\n";
 	print OUT qq(track type=bedGraph name="$fname" description="$fname"\n) if $vars{'output_format'} eq 'bedgraph';
 	
 	foreach my $chr (sort keys %data) {
@@ -855,7 +884,7 @@ sub find_norm_factor {
 		$cor = sprintf("%0.2f",$cor);
 		printout("  Spearman's correlation: $cor  \n");
 		
-		if ($cor < 0.4) {
+		if ($cor < 0.3) {
 			printout ("  *** Warning: low correlation -- kernel density estimation may not be the best normalisation method for this dataset.  Consider using readcount normalisation instead (using --norm_method=rpm) ...\n\n");
 		}
 		
@@ -933,15 +962,11 @@ sub stdev {
 	return ($a[0], 0, 0, $a[0]) if $n<2;
 	
 	my $total;
-	foreach (@a) {
-		$total+=$_;
-	}
+	map {$total += $_} @a;
 	my $mean = $total/$n;
 	
 	my $sum;
-	foreach my $x (@a) {
-		$sum+=abs($x-$mean);
-	}
+	map {$sum+=abs($_-$mean)} @a;
 	my $sd= $sum/($n-1);
 	my $se = $sd/sqrt($n);
 	
@@ -1097,9 +1122,7 @@ sub mean {
 	return $a[0] if $n<2;
 	
 	my $total;
-	foreach (@a) {
-		$total+=$_;
-	}
+	map {$total += $_} @a;
 	my $mean = $total/$n;
 	
 	return $mean;
@@ -1146,9 +1169,9 @@ sub load_gatc_frags {
 	
 	if ($vars{'gatc_frag_file'} =~ m/\.gz$/) {
 		# gzipped file
-		open (GATC, "gunzip -c $vars{'gatc_frag_file'} |") || die "Error: cannot open GATC file $vars{'gatc_frag_file'}: $!\n\n";
+		open (GATC, '-|', "gunzip -c $vars{'gatc_frag_file'}") || die "Error: cannot open GATC file $vars{'gatc_frag_file'}: $!\n\n";
 	} else {
-		open (GATC, "<$vars{'gatc_frag_file'}") || die "Error: cannot open GATC file $vars{'gatc_frag_file'}: $!\n\n";
+		open (GATC, '<', $vars{'gatc_frag_file'}) || die "Error: cannot open GATC file $vars{'gatc_frag_file'}: $!\n\n";
 	}
 		
 	foreach (<GATC>) {
@@ -1169,11 +1192,11 @@ sub load_gatc_frags {
 
 sub init_log_file {
 	my $date = get_date();
-	open (STATS, ">pipeline-$date.log") || die "Could not open bowtie output file for writing: $!\n";
+	open (LOG, '>', "pipeline-$date.log") || die "Could not open bowtie output file for writing: $!\n";
 	my $args = join("|",@cli);
 	
-	print STATS "damidseq_pipeline v$version\n";
-	print STATS "Command-line options: @ARGV\n\n";
+	print LOG "damidseq_pipeline v$version\n";
+	print LOG "Command-line options: @ARGV\n\n";
 }
 
 sub get_date {
