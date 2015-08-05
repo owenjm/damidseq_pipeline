@@ -1,3 +1,7 @@
+[v1.2.3]
+*  Fixed a serious error in RPM normalisation calculations (values were inverted) -- please re-run on your samples if you have used this method on them
+*  Minor code cleanups
+
 [v1.2.1]
 *  Added ability to process BAM files generated from paired-end sequencing
 *  Cleaner reporting of missing assembly fragments in GATC files

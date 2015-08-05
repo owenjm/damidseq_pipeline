@@ -23,7 +23,7 @@ use 5.010;
 
 $|++;
 
-my $version = "1.2.1";
+my $version = "1.2.3";
 print STDERR "\ndamidseq_pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
 
 # Global options
@@ -288,9 +288,11 @@ EOT
 			
 			print "$name\t$l\n";
 			$files{$name}[0]=$l;
-			if ($name =~ m/^dam/i) {
-				die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
-				$damname = $name;
+			unless ($vars{'just_align'}) {
+				if ($name =~ m/^dam/i) {
+					die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
+					$damname = $name;
+				}
 			}
 		}
 	} elsif (-e $index_file) {
@@ -325,9 +327,11 @@ EOT
 				printout("$index{$i}: Index $i\n");
 				$files{$index{$i}}[0]=$l;
 				
-				if ($index{$i} =~ m/^dam/i) {
-					die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
-					$damname = $index{$i}
+				unless ($vars{'just_align'}) {
+					if ($index{$i} =~ m/^dam/i) {
+						die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
+						$damname = $index{$i}
+					}
 				}
 			} else {
 				die ("\nERROR: cannot find adaptor reference in fastq files.\n\n$index_txt_error\n");
@@ -572,7 +576,7 @@ sub calc_bins {
 			chomp();
 			$lines++;
 			my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split(/\t/);
-			#say "$chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen";
+			
 			unless ($cigar) {
 				if (m/\@SQ\s+SN:([\d|\w]+)\s+LN:(\d+)/) {
 					# Grab chromosome sizes from BAM file
@@ -694,8 +698,8 @@ sub calc_bins {
 		
 		if (@non_chrs) {
 			my $missing = join(', ', @non_chrs);
-			print STDERR "  Warning: alignment contains chromosome identities not found in GATC file (see log file for details\n";
-			print LOG "  Warning: alignment contains chromosome identities not found in GATC file\n  $missing\n  (This is normal for small assembly fragments)\n";
+			print STDERR "  Warning: alignment contains chromosome identities not found in GATC file (see log file for details; this is normal if unmapped assemblies and the mitochondrial genome have been excluded from the GATC file.)";
+			print LOG "  Warning: alignment contains chromosome identities not found in GATC file:\n  $missing\n";
 		}
 		
 		printout("\n");
@@ -714,7 +718,7 @@ sub normalize {
 			$norm = $vars{'norm_override'};
 		} elsif ($vars{'norm_method'} eq 'rpm') {
 			printout("  (using RPM normalisation ...)\n");
-			$norm = $counts{$n}/$counts{$damname};
+			$norm = $counts{$damname}/$counts{$n};
 			printout("  ... normalising by ".sprintf("%0.2f",$norm)."\n");
 		} else {
 			$norm = $norm_factors{$n};
@@ -945,7 +949,7 @@ sub find_quants {
 			push @quants, [$q, int($q * @frags)];
 		}
 		
-		foreach  (@quants) {
+		foreach (@quants) {
 			my $cut_off = @{$_}[0];
 			my $score = $frags[@{$_}[1]];
 			printout("   Quantile ".sprintf("%0.1f",$cut_off).": ".sprintf("%0.2f",$score)."\n");
@@ -1133,10 +1137,7 @@ sub help {
 	print STDERR "Options:\n";
 	
 	my $opt_len = 0;
-	foreach (keys %vars) {
-		my $l = length($_);
-		$opt_len = $l if $l > $opt_len;
-	}
+	map {$opt_len = length if length > $opt_len} keys %vars;
 	
 	$opt_len+=2;
 	
