@@ -7,11 +7,13 @@ my @in_files;
 my %vars = (
 	'name' => '',
 	'scaffolds' => 0,
+	'mito' => 0,
 );
 
 my %vars_details = (
 	'name' => 'Name of organism (for output file)',
 	'scaffolds' => 'Process scaffold assemblies (not recommended)',
+	'mito' => 'Process mitochondrial chromosome (not recommended)',
 );
 
 process_cli();
@@ -28,25 +30,6 @@ $vars{'name'} ||= $fhead;
 generate_track($file);
 
 print STDOUT "All done.                \n\n";
-
-sub motif_hash {
-	my ($in, $c) = @_;
-	
-	my $l = length($in);
-	for my $base (0 .. ($l-($motif_len+1))) {
-		
-		if ($base%100000==0) {
-			my $pc = sprintf("%0.0f",($base*100)/$l);
-			print  STDERR "  $pc% done ...\r";
-		}
-		
-		my $w = substr($in,$base,$motif_len);
-		
-		if ($w =~ m/$motif/gi) {
-			print TRACK join("\t",$c, ".", ".", $base, ($base+$motif_len), 1, '+', '.', "."), "\n";
-		} 
-	}
-}
 
 sub generate_track {
 	my $fn = shift;
@@ -72,14 +55,24 @@ sub generate_track {
 		if (m/^\>/) {
 			# New chromosome header
 			if (m/scaffold/i) {
-				next unless $vars{'scaffolds'};
+				unless ($vars{'scaffolds'}) {
+					process($chr, $in);
+					$in = "";
+					$chr = "";
+					next;
+				}
 			}
 			
-			if ($in) {
-				# first, process what we've got from the last one ...
-				print STDERR "Processing $chr ...                \n";
-				motif_hash($in, $chr);
+			if (m/mito/i) {
+				unless ($vars{'mito'}) {
+					process($chr, $in);
+					$in = "";
+					$chr = "";
+					next;
+				}
 			}
+			
+			process($chr, $in);
 			
 			# get new chromosome name
 			($chr) = m/^>(.*?)\s/;
@@ -89,17 +82,43 @@ sub generate_track {
 			next;
 		}
 		chomp;
+		s/\s//g;
 		$in .= $_;
 	}
 	
 	# process the last chromosome
-	if ($in) {
-		print STDERR "Processing $chr ...                \n";
-		motif_hash($in, $chr);
-	}
+	process($chr, $in);
 	
 	close FN;	
 	close TRACK;
+}
+
+sub process {
+	my ($chr, $in) = @_;
+	return unless $chr && $in;
+
+	# process what we've got ...
+	print STDERR "Processing $chr ...                \n";
+	motif_hash($in, $chr);
+}
+
+sub motif_hash {
+	my ($in, $chr) = @_;
+		
+	my $l = length($in);
+	for my $base (0 .. ($l-($motif_len+1))) {
+		
+		if ($base%100000==0) {
+			my $pc = sprintf("%0.0f",($base*100)/$l);
+			print STDERR "  $pc% done ...\r";
+		}
+		
+		my $w = substr($in,$base,$motif_len);
+		
+		if ($w =~ m/$motif/gi) {
+			print TRACK join("\t",$chr, ".", ".", $base, ($base+$motif_len), 1, '+', '.', '.'), "\n";
+		} 
+	}
 }
 
 sub process_cli {
