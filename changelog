@@ -1,3 +1,6 @@
+[v1.2.4]
+*  Added explicit checks for bowtie2 and samtools executables, and for bowtie2 output
+
 [v1.2.3]
 *  Fixed a serious error in RPM normalisation calculations (values were inverted) -- please re-run on your samples if you have used this method on them
 *  Minor code cleanups
