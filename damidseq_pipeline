@@ -24,7 +24,7 @@ use 5.010;
 
 $|++;
 
-my $version = "1.2.4";
+my $version = "1.2.5";
 print STDERR "\ndamidseq_pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
 
 # Global options
@@ -41,7 +41,7 @@ my %vars = (
 	'kde_plot' => 0,
 	'bowtie2_genome_dir' => '',
 	'threads' => 7,
-	'full_data_files' => 1,
+	'full_data_files' => 0,
 	'qscore1min' => 0.4,
 	'qscore1max' => 1.0,
 	'qscore2max' => 0.9,
@@ -59,6 +59,9 @@ my %vars = (
 	'load_defaults' => '',
 	'reset_defaults' => 0,
 	'bins' => '75',
+	#'filter' => 0,
+	'dam' => '',
+	'out_name' => ''
 );
 
 my %vars_details = (
@@ -92,6 +95,17 @@ my %vars_details = (
 	'load_defaults' => "Load this saved set of defaults\n\r(use 'list' to list current saved options)",
 	'reset_defaults' => 'Delete user-defined parameters',
 	'bins' => 'Width of bins to use for mapping reads',
+	#'filter' => 'Apply filtering to fastq files before alignment and processing',
+	'dam' => 'Specify file to use as Dam control',
+	'out_name' => 'Use this as the fusion-protein name when saving the final ratio'
+);
+
+my @vars_unsaved = (
+	'save_defaults',
+	'reset_defaults',
+	'load_defaults',
+	'dam',
+	'out_name'
 );
 
 # Global variables
@@ -255,6 +269,14 @@ sub process_cli {
 
 sub process_input_files {
 	
+	# Check for user-specified dam control
+	if ($vars{'dam'}) {
+		push @in_files, $vars{'dam'}
+	}
+	
+	# Get unique list of infiles
+	@in_files = uniq(@in_files);
+	
 	# Index file
 	my $index_file = "index.txt";
 	
@@ -290,12 +312,9 @@ EOT
 		foreach my $l (@in_files) {
 			my ($name) = $l =~ m/(.*?)[_|\.].*bam/i;
 			$name =~ s/-ext\d+//; # remove extensions from the name
-			print "$name\t$l\n";
+			print STDOUT "$name\t$l\n";
 			$files{$name}[0]=$l;
-			if ($name =~ m/^dam/i) {
-				die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
-				$damname = $name;
-			}
+			check_dam_name($name);
 		}
 	} elsif (@in_files && !(-e $index_file)) {
 		foreach my $l (@in_files) {
@@ -303,13 +322,19 @@ EOT
 			my ($ext) = $l =~ m/.*\.(.*)/;
 			$vars{'bamfiles'} = 1 if $ext =~ /bam/;
 			
-			print "$name\t$l\n";
+			if ($files{$name}) {
+				#same name already in use
+				my $i = 1;
+				while ($files{"$name.$i"}) {
+					$i++;
+				}
+				$name = "$name.$i";
+			}
+			
+			print STDOUT "$name\t$l\n";
 			$files{$name}[0]=$l;
 			unless ($vars{'just_align'}) {
-				if ($name =~ m/^dam/i) {
-					die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
-					$damname = $name;
-				}
+				check_dam_name($name, $l);
 			}
 		}
 	} elsif (-e $index_file) {
@@ -360,13 +385,29 @@ EOT
 	
 	# Check that there's a Dam control sample ...
 	unless ($vars{'just_align'}) {
-		die ("Error: no Dam control sample detected!\n\n") unless $damname;
+		unless ($damname) {
+			printout("\nError: no Dam control sample detected!\nPlease use include a filename starting with 'Dam', or specify the Dam control file to use with the --dam=[filename] switch\n");
+			exit 1;
+		} else {
+			printout("  Using $damname as Dam control.\n") if $vars{'dam'};
+		}
+		
 	}
 	
 	# If we're only processing .bam files, we won't need to do an alignment or extend reads...
 	if ($vars{'bamfiles'}) {
 		$vars{'bowtie'} = 0;
 		$vars{'extend_reads'} = 0;
+	}
+}
+
+sub check_dam_name {
+	my ($name, $file) = @_;
+	if ($vars{'dam'}) {
+		$damname = $name if $vars{'dam'} eq $file;
+	} elsif ($name =~ m/^dam/i) {
+		die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
+		$damname = $name;
 	}
 }
 
@@ -434,6 +475,8 @@ sub read_defaults_file {
 sub save_defaults {
 	# Save parameters if requested
 	if ($vars{'save_defaults'}) {
+		my %donotsave = map {$_ => 1} @vars_unsaved;
+		
 		my $name;
 		if ($vars{'save_defaults'} eq '1') {
 			$name = '';
@@ -444,8 +487,7 @@ sub save_defaults {
 		print STDERR "Writing defaults to file ...\n";
 		open(DEFAULTS,">$HOME/.config/damid_pipeline/defaults$name") || die("Cannot open defaults file for writing: $!\n\n");
 		for my $p (keys %vars) {
-			next if $p eq 'save_defaults';
-			next if $p eq 'reset_defaults';
+			next if $donotsave{$p};
 			next unless $vars{$p};
 			print DEFAULTS "$p\t$vars{$p}\n";
 		}
@@ -574,6 +616,10 @@ sub calc_bins {
 		# Obtain readcounts via samtools ...
 		my $seqs = `$vars{'samtools_path'}samtools view -c $fn.bam`;
 		chomp($seqs);
+		if ($seqs == 0) {
+			printout("Error: no reads obtained from bamfile ... exiting.\n\n");
+			exit 1;
+		}
 		
 		$counts{$n}=$seqs;
 		printout("  $seqs reads\n");
@@ -584,7 +630,7 @@ sub calc_bins {
 		if ($n eq $damname) {
 			$denom = $counts{$n};
 		}
-				
+		
 		printout("  Generating bins from $fn.bam ...\n");
 		
 		my %cov;
@@ -595,6 +641,7 @@ sub calc_bins {
 		# (bedtools' -coverage memory consumption is pretty crazy, getting up to 8Gb for ~25M reads ... this implementation uses about 1/10th of that memory.)
 		# Speed considerations are similar (this is seems to be slightly faster ...)
 		open(COV, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die ("Error: unable to open bamfile $!\n");
+		my $paired_flag = 0;
 		while (<COV>) {
 			chomp();
 			$lines++;
@@ -614,6 +661,7 @@ sub calc_bins {
 			my ($pstart, $pend);
 			if ($pnext) {
 				# paired ends
+				$paired_flag = 1;
 				next unless $tlen && abs($tlen) < 1500;
 				next unless $rnext eq '=';
 				($pstart, $pend) = sort($pos, $pos + $tlen);
@@ -638,6 +686,16 @@ sub calc_bins {
 			}	
 		}
 		close COV;
+		
+		if ($paired_flag) {
+			printout("  Warning: paired-end reads detected.  Support for paired end reads is experimental ...\n\n");
+		}
+		
+		# sanity check
+		unless (keys(%cov)) {
+			printout("  Error:  no coverage was found.  Exiting ...\n\n");
+			exit 1;
+		}
 		
 		my $read_bins=0;
 		foreach my $chr (keys %cov) {
@@ -823,7 +881,9 @@ sub write_file {
 	
 	my $track_type = $write_gatcs ? 'gatc.' : '';
 	my $name_spacer = $vars{'method_subtract'} ? ".sub." : ".";
-	my $fname = "$n-vs-Dam$name_spacer$track_type";
+	my $protname = $vars{'out_name'} ? $vars{'out_name'} : $n;
+	
+	my $fname = "$protname-vs-Dam$name_spacer$track_type";
 	my $fout=$fname.($vars{'output_format'} eq 'bedgraph' ? 'bedgraph' : 'gff');
 	
 	my $print_psc = sprintf("%0.2f",$pseudocounts);
@@ -880,7 +940,8 @@ sub find_norm_factor {
 		
 		my @ratios;
 		my $total_frags;
-		my (@a, @b);
+		my (@ra, @rb);
+		
 		foreach my $key (keys %gatc_frag_score) {
 			$total_frags++;
 			my %score;
@@ -892,22 +953,22 @@ sub find_norm_factor {
 			
 			$qscore{1} = qsc($score{1},$damname);
 			$qscore{2} = qsc($score{2}, $n);
-			
+				
 			if (($qscore{1}>=$vars{'qscore1min'}) && ($qscore{1}<=$vars{'qscore1max'}) && ($qscore{2}<=$vars{'qscore2max'})) {
 				if ($vars{'old_norm_method'}) {
 					# old approximation method provided for compatibility -- not recommended
 					push @ratios, $score{2}/$score{1};
 				} else {
-					push @ratios, log($score{2}/$score{1})/log(2);
+					push @ratios, log( $score{2}/$score{1} ) / log(2);
 				}
-				push @a, $score{1};
-				push @b, $score{2};
+				push @ra, $score{1};
+				push @rb, $score{2};
 			}
 			
 		}
 		
 		print STDOUT "  Calculating correlation ...\r";
-		my $cor = spearmans(\@a, \@b);
+		my $cor = spearmans(\@ra, \@rb);
 		$cor = sprintf("%0.2f",$cor);
 		printout("  Spearman's correlation: $cor  \n");
 		
@@ -1112,6 +1173,11 @@ sub spearmans {
 	my $n = @sa;
 	
 	map {$di2sum += ($sa[$_]-$sb[$_])**2} (0 .. $#sa);
+	unless ($di2sum) {
+		printout("\n\nError: could not generate Spearman's correlation.\n(Did the reads get mapped to GATC fragments correctly?)\n\n");
+		exit 1;
+	}
+	
 	my $rho = 1 - (6*$di2sum)/($n*($n**2 - 1));
 	
 	return $rho;
@@ -1229,4 +1295,10 @@ sub get_date {
 	$date =~ s/\s+/_/g;
 	$date =~ s/:/-/g;
 	return($date);
+}
+
+sub uniq {
+	return unless @_;
+	my %seen;
+	return grep { !$seen{$_}++ } @_;
 }
