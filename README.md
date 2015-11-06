@@ -4,6 +4,12 @@ Processing DamID-seq data involves extending single-end reads, aligning the read
 
 [damidseq_pipeline](https://github.com/owenjm/damidseq_pipeline/tarball/master) is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in GFF or bedGraph format. These files can easily be converted to TDF for viewing in [IGV](http://www.broadinstitute.org/software/igv/) with the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script (see below).
 
+### Citation
+
+If you find this software useful, please cite:
+
+Marshall OJ and Brand AH. (2015) damidseq_pipeline: an automated pipeline for processing DamID sequencing datasets. *Bioinformatics.* Oct 15;31(20):3371-3.  doi: 10.1093/bioinformatics/btv386. ([pubmed](http://www.ncbi.nlm.nih.gov/pubmed/26112292); [full text, open access](http://bioinformatics.oxfordjournals.org/content/early/2015/07/13/bioinformatics.btv386.long))
+
 ### Download
 
 Download the latest version of the pipeline script and associated files:
@@ -128,9 +134,3 @@ where A6 is the sequencing adaptor index. The sample name cannot contain spaces 
 ### Example dataset
 
 An example set of two small (3000 reads each) fastq.gz files and an index.txt file are provided in the zip archive (as "example.zip"), or you can [download these separately](http://github.com/owenjm/damid_pipeline/blob/master/example.zip?raw=true). Running the pipeline script on these files should successfully produce a polII-vs-Dam.gff ratio file as output.
-
-### Citation
-
-If you find this software useful, please cite:
-
-Marshall OJ and Brand AH. (2015) damidseq_pipeline: an automated pipeline for processing DamID sequencing datasets. *Bioinformatics.* doi: 10.1093/bioinformatics/btv386. ([pubmed](http://www.ncbi.nlm.nih.gov/pubmed/26112292); [full text](http://bioinformatics.oxfordjournals.org/content/early/2015/07/13/bioinformatics.btv386.long))
