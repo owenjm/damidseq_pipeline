@@ -19,12 +19,13 @@
 
 use strict;
 use File::Copy;
+use File::Basename;
 use IPC::Cmd qw[can_run run];
 use 5.010;
 
 $|++;
 
-my $version = "1.2.5";
+my $version = "1.2.6";
 print STDERR "\ndamidseq_pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
 
 # Global options
@@ -310,16 +311,18 @@ EOT
 	if ($vars{'bamfiles'}) {
 		# Bamfiles
 		foreach my $l (@in_files) {
-			my ($name) = $l =~ m/(.*?)[_|\.].*bam/i;
+			my ($name,$dir,$ext) = fileparse($l, qr/\.[^.]*/);
+			next unless $ext =~ m/bam/;
+			
 			$name =~ s/-ext\d+//; # remove extensions from the name
 			print STDOUT "$name\t$l\n";
 			$files{$name}[0]=$l;
-			check_dam_name($name);
+			check_dam_name($name, $l);
 		}
 	} elsif (@in_files && !(-e $index_file)) {
 		foreach my $l (@in_files) {
-			my ($name) = $l =~ m/[\.|\/]*(.*?)(_|-ext|\.)/i;
-			my ($ext) = $l =~ m/[\.|\/]*.*\.(.*)/;
+			my ($name,$dir,$ext) = fileparse($l, qr/\.[^.]*/);
+			($name) =~ m/(_|-ext|\.)/i;
 			$vars{'bamfiles'} = 1 if $ext =~ /bam/;
 			
 			if ($files{$name}) {
