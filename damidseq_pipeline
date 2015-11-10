@@ -318,8 +318,8 @@ EOT
 		}
 	} elsif (@in_files && !(-e $index_file)) {
 		foreach my $l (@in_files) {
-			my ($name) = $l =~ m/(.*?)(_|-ext|\.)/i;
-			my ($ext) = $l =~ m/.*\.(.*)/;
+			my ($name) = $l =~ m/[\.|\/]*(.*?)(_|-ext|\.)/i;
+			my ($ext) = $l =~ m/[\.|\/]*.*\.(.*)/;
 			$vars{'bamfiles'} = 1 if $ext =~ /bam/;
 			
 			if ($files{$name}) {
