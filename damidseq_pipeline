@@ -25,7 +25,7 @@ use 5.010;
 
 $|++;
 
-my $version = "1.2.6";
+my $version = "1.2.7";
 print STDERR "\ndamidseq_pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
 
 # Global options
@@ -62,7 +62,8 @@ my %vars = (
 	'bins' => '75',
 	#'filter' => 0,
 	'dam' => '',
-	'out_name' => ''
+	'out_name' => '',
+	'no_file_filters' => ''
 );
 
 my %vars_details = (
@@ -98,7 +99,8 @@ my %vars_details = (
 	'bins' => 'Width of bins to use for mapping reads',
 	#'filter' => 'Apply filtering to fastq files before alignment and processing',
 	'dam' => 'Specify file to use as Dam control',
-	'out_name' => 'Use this as the fusion-protein name when saving the final ratio'
+	'out_name' => 'Use this as the fusion-protein name when saving the final ratio',
+	'no_file_filters' => 'Do not trim filenames for output'
 );
 
 my @vars_unsaved = (
@@ -322,7 +324,7 @@ EOT
 	} elsif (@in_files && !(-e $index_file)) {
 		foreach my $l (@in_files) {
 			my ($name,$dir,$ext) = fileparse($l, qr/\.[^.]*/);
-			($name) =~ m/(_|-ext|\.)/i;
+			($name) = $name =~ m/(.*?)(_|-ext|\.)/i unless $vars{'no_file_filters'};
 			$vars{'bamfiles'} = 1 if $ext =~ /bam/;
 			
 			if ($files{$name}) {
