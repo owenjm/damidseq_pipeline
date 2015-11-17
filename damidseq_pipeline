@@ -25,7 +25,7 @@ use 5.010;
 
 $|++;
 
-my $version = "1.2.7";
+my $version = "1.3";
 print STDERR "\ndamidseq_pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
 
 # Global options
@@ -63,7 +63,9 @@ my %vars = (
 	#'filter' => 0,
 	'dam' => '',
 	'out_name' => '',
-	'no_file_filters' => ''
+	'no_file_filters' => '',
+	'keep_sam' => 0,
+	'only_sam' => 0
 );
 
 my %vars_details = (
@@ -100,7 +102,9 @@ my %vars_details = (
 	#'filter' => 'Apply filtering to fastq files before alignment and processing',
 	'dam' => 'Specify file to use as Dam control',
 	'out_name' => 'Use this as the fusion-protein name when saving the final ratio',
-	'no_file_filters' => 'Do not trim filenames for output'
+	'no_file_filters' => 'Do not trim filenames for output',
+	'keep_sam' => 'Do not delete .sam file',
+	'only_sam' => 'Do not generate bam file'
 );
 
 my @vars_unsaved = (
@@ -579,7 +583,19 @@ sub extend_reads {
 				
 				$seqs++;
 				
+				my $readlen;
+				foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
+					$readlen += $cig;
+				}
+				
 				$cigar="$vars{'len'}M";
+				
+				if ($flag == 16) {
+					# minus strand
+					$pos -= $vars{'len'} - $readlen;
+					$pos = max(1,$pos);
+				}
+				
 				$seq = "*"; # We're extending reads and we have no sequence information for the extension ...
 				$qual= "*"; #  ... ditto for quality.  Thankfully the SAMfile spec allows for no sequence or quality information.
 				
@@ -590,7 +606,7 @@ sub extend_reads {
 			close OUT;
 			
 			# the original SAM files are huge, so we nuke them
-			unlink("$fn.sam");
+			unlink("$fn.sam") unless $vars{'keep_sam'};
 			
 			printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n");
 		}
@@ -600,7 +616,8 @@ sub extend_reads {
 sub calc_bins {
 	printout("\n*** Calculating bins ***");
 	foreach my $n (keys %files) {
-		my $fn = $vars{'bamfiles'} ? $files{$n}[0] : "$n-ext$vars{'len'}";
+		my $fn = $vars{'bamfiles'} ? $files{$n}[0] :
+					$vars{'extend_reads'} ? "$n-ext$vars{'len'}" : $n;
 		$fn =~ s/\.bam$//;
 		
 		printout("\nNow working on $fn ...\n");
@@ -609,7 +626,7 @@ sub calc_bins {
 			printout("Generating .bam file ...\n");
 			`$vars{'samtools_path'}samtools view -Sb $fn.sam > $fn.unsort.bam`;
 			
-			unlink("$fn.sam");
+			unlink("$fn.sam") unless $vars{'keep_sam'};
 			
 			# sort the bam file ...
 			printout("  sorting ...\n");
