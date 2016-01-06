@@ -44,7 +44,9 @@
 
 <p>Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary and adding pseudocounts to mitigate the effect of background counts is highly recommended.</p>
 
-<p><a href="https://github.com/owenjm/damidseq_pipeline/tarball/master">damidseq_pipeline</a> is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in GFF or bedGraph format. These files can easily be converted to TDF for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> with the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script (see below).</p>
+<p><a href="https://github.com/owenjm/damidseq_pipeline/tarball/master">damidseq_pipeline</a> is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in GFF or bedGraph format.</p>
+
+<p>These output ratio files can easily be converted to TDF for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> with the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script (see below).  The files can be processed for peak calling using <a href="http://github.com/owenjm/find_peaks">find_peaks</a> or, if using RNA pol II Targeted DamID, transcribed genes can be called using <a href="http://github.com/owenjm/polii.gene.call">polii.gene.call</a>.</p>
 
 <h2>
 <a id="citation" class="anchor" href="#citation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Citation</h2>
@@ -196,13 +198,31 @@ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
 <p>If bowtie2 and samtools are not in your path, you can specify these on the command-line also.</p>
 
 <h2>
-<a id="output" class="anchor" href="#output" aria-hidden="true"><span class="octicon octicon-link"></span></a>Output</h2>
+<a id="output-and-downstream-data-processing" class="anchor" href="#output-and-downstream-data-processing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Output and downstream data processing</h2>
 
-<p>The final output will be two ratio files: Sample-vs-DAM.gff and Sample-vs-DAM.gatc.gff. The .gatc.gff file represents the data at GATC fragment resolution (based on the reference genome) and should be used for all subsequent analysis. The other ratio file contains the coverageBed bins (i.e. 75nt bins by default) and may be useful for data representation.</p>
+<p>The final output will be a single ratio file: Sample-vs-DAM.gatc.gff. The .gatc.gff file represents the data at GATC fragment resolution (based on the reference genome) and should be used for all subsequent analysis.</p>
 
 <p>The <a href="http://www.ensembl.org/info/website/upload/gff.html">GFF format</a> is used by default.  The pipeline script can output the final ratio files in <a href="http://genome.ucsc.edu/goldenpath/help/bedgraph.html">bedGraph format</a> instead if the --output_format=bedgraph command-line switch is used.</p>
 
-<p>Either file can be converted to .tdf format for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> via the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script.</p>
+<h3>
+<a id="visualising-the-dna-binding-profiles" class="anchor" href="#visualising-the-dna-binding-profiles" aria-hidden="true"><span class="octicon octicon-link"></span></a>Visualising the DNA binding profiles</h3>
+
+<p>The output file can be can be converted to .tdf format for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> via the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script.</p>
+
+<h3>
+<a id="calling-significant-peaks-from-the-data" class="anchor" href="#calling-significant-peaks-from-the-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Calling significant peaks from the data</h3>
+
+<p>The <a href="http://github.com/owenjm/find_peaks">find_peaks</a> software will process the output .gatc.gff ratio file and call significant peaks present in the dataset.  Please see the find_peaks website for more details.</p>
+
+<h3>
+<a id="calling-transcribed-genes-from-rna-pol-ii-datasets" class="anchor" href="#calling-transcribed-genes-from-rna-pol-ii-datasets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Calling transcribed genes from RNA pol II datasets</h3>
+
+<p>The <a href="http://github.com/owenjm/polii.gene.call">polii.gene.call</a> R script will call transcribed genes (i.e. gene bodies with significantly enriched pol II occupancy) from the output .gatc.gff file.  Please see the polii.gene.call site for more details.</p>
+
+<h3>
+<a id="other-useful-scripts-and-utilities" class="anchor" href="#other-useful-scripts-and-utilities" aria-hidden="true"><span class="octicon octicon-link"></span></a>Other useful scripts and utilities</h3>
+
+<p>A collection of useful R and Perl scripts for comparing and analysing DamID-seq data is maintained at <a href="http://github.com/owenjm/damid_misc">http://github.com/owenjm/damid_misc</a> .</p>
 
 <h2>
 <a id="working-with-multiple-genomes" class="anchor" href="#working-with-multiple-genomes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Working with multiple genomes</h2>
