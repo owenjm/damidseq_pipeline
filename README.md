@@ -111,15 +111,15 @@ The [GFF format](http://www.ensembl.org/info/website/upload/gff.html) is used by
 
 ### Visualising the DNA binding profiles
 
-The output file can be can be converted to .tdf format for viewing in [IGV](http://www.broadinstitute.org/software/igv/) via the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script.
+The bedgraph output file can be can be converted to .tdf format via igvtools, either using the graphical interface provided by [IGV](http://www.broadinstitute.org/software/igv/) or via the command-line.  A legacy [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script is also provided for converting GFF files (the default output file format prior to v1.4) to TDF.
 
 ### Calling significant peaks from the data
 
-The [find_peaks](http://github.com/owenjm/find_peaks) software will process the output .gatc.gff ratio file and call significant peaks present in the dataset.  Please see the find_peaks website for more details.
+The [find_peaks](http://github.com/owenjm/find_peaks) software will process the output .gatc.bed ratio file and call significant peaks present in the dataset.  Please see the find_peaks page for more details.
 
 ### Calling transcribed genes from RNA pol II datasets
 
-The [polii.gene.call](http://github.com/owenjm/polii.gene.call) R script will call transcribed genes (i.e. gene bodies with significantly enriched pol II occupancy) from the output .gatc.gff file.  Please see the polii.gene.call site for more details.
+The [polii.gene.call](http://github.com/owenjm/polii.gene.call) Rscript will call transcribed genes (i.e. gene bodies with significantly enriched pol II occupancy) from the output .gatc.bed file.  Please see the polii.gene.call page for more details.
 
 ### Other useful scripts and utilities
 
