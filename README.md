@@ -105,9 +105,9 @@ If bowtie2 and samtools are not in your path, you can specify these on the comma
 
 ## Output and downstream data processing
 
-The final output will be a single ratio file: Sample-vs-DAM.gatc.gff. The .gatc.gff file represents the data at GATC fragment resolution (based on the reference genome) and should be used for all subsequent analysis.
+The final output will be a single ratio file: Sample-vs-DAM.gatc.bedgraph. The .gatc.bedgraph file represents the data at GATC fragment resolution (based on the reference genome) and should be used for all subsequent analysis.
 
-The [GFF format](http://www.ensembl.org/info/website/upload/gff.html) is used by default.  The pipeline script can output the final ratio files in [bedGraph format](http://genome.ucsc.edu/goldenpath/help/bedgraph.html) instead if the --output_format=bedgraph command-line switch is used.
+The [bedGraph format](http://genome.ucsc.edu/goldenpath/help/bedgraph.html) is used by default.  The pipeline script can output the final ratio files in [GFF format](http://www.ensembl.org/info/website/upload/gff.html) instead if the --output_format=gff command-line switch is used.
 
 ### Visualising the DNA binding profiles
 
@@ -115,11 +115,11 @@ The bedgraph output file can be can be converted to .tdf format via igvtools, ei
 
 ### Calling significant peaks from the data
 
-The [find_peaks](http://github.com/owenjm/find_peaks) software will process the output .gatc.bed ratio file and call significant peaks present in the dataset.  Please see the find_peaks page for more details.
+The [find_peaks](http://github.com/owenjm/find_peaks) software will process the output .gatc.bedgraph ratio file and call significant peaks present in the dataset.  Please see the find_peaks page for more details.
 
 ### Calling transcribed genes from RNA pol II datasets
 
-The [polii.gene.call](http://github.com/owenjm/polii.gene.call) Rscript will call transcribed genes (i.e. gene bodies with significantly enriched pol II occupancy) from the output .gatc.bed file.  Please see the polii.gene.call page for more details.
+The [polii.gene.call](http://github.com/owenjm/polii.gene.call) Rscript will call transcribed genes (i.e. gene bodies with significantly enriched pol II occupancy) from the output .gatc.bedgraph file.  Please see the polii.gene.call page for more details.
 
 ### Other useful scripts and utilities
 
