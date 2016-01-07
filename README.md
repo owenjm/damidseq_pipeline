@@ -4,7 +4,7 @@ Processing DamID-seq data involves extending single-end reads, aligning the read
 
 [damidseq_pipeline](https://github.com/owenjm/damidseq_pipeline/tarball/master) is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in bedGraph (or optionally GFF) format.
 
-These output ratio files can easily be converted to TDF for viewing in [IGV](http://www.broadinstitute.org/software/igv/) using igvtools.  The files can be processed for peak calling using [find_peaks](http://github.com/owenjm/find_peaks) or, if using RNA pol II DamID, transcribed genes can be determined using [polii.gene.call](http://github.com/owenjm/polii.gene.call).
+The output ratio files can easily be converted to TDF for viewing in [IGV](http://www.broadinstitute.org/software/igv/) using igvtools.  The files can be processed for peak calling using [find_peaks](http://github.com/owenjm/find_peaks) or, if using RNA pol II DamID, transcribed genes can be determined using [polii.gene.call](http://github.com/owenjm/polii.gene.call).
 
 ## Citation
 
