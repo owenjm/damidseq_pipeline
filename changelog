@@ -1,3 +1,26 @@
+[v1.4]
+*  New read-extension method: by default, reads are now only extended as far as the next GATC fragment.  Use --extension_method=full to disable this feature and extend every read by the value of --len.
+*  Output format is now bedgraph by default.  Use --output_format=gff to restore the previous default.  Changing the default to bedgraph allows users to create TDF tracks directly within the graphical IGV tools, making it easier for end users.
+*  Minor code cleanups
+
+[v1.3]
+*  Major bugfix: reads from the minus strand were not being extended correctly during processing.  The overall impact is minor (correlation between old and new read extension methods is >0.95) but this new method is technically more accurate.
+*  added --keep_sam (do not delete the temporary SAM file) option
+*  added --only_sam (do not generate BAM files) option (both options are intended for debug purposes only)
+
+[v1.2.7]
+*  New opition --no_file_filters to prevent any filename trimming/filtering (by default input filenames are trimmed to the first underscore)
+*  Small filename issue fixes
+
+[v1.2.6]
+*  Now uses File::Basename to handle filenames
+*  Fixed/cleaned up a number of rare problems with filename handling
+
+[v1.2.5]
+*  Added --dam and --out_name options.  Use these to set the Dam-only control sample and/or a custom output name
+*  Added more sanity checks
+*  Minor bugfixes
+
 [v1.2.4]
 *  Added explicit checks for bowtie2 and samtools executables, and for bowtie2 output
 
