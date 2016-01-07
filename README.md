@@ -2,9 +2,9 @@
 
 Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary and adding pseudocounts to mitigate the effect of background counts is highly recommended.
 
-[damidseq_pipeline](https://github.com/owenjm/damidseq_pipeline/tarball/master) is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in GFF or bedGraph format.
+[damidseq_pipeline](https://github.com/owenjm/damidseq_pipeline/tarball/master) is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in bedGraph (or optionally GFF) format.
 
-These output ratio files can easily be converted to TDF for viewing in [IGV](http://www.broadinstitute.org/software/igv/) with the provided [gff2tdf.pl](http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true) script (see below).  The files can be processed for peak calling using [find_peaks](http://github.com/owenjm/find_peaks) or, if using RNA pol II Targeted DamID, transcribed genes can be called using [polii.gene.call](http://github.com/owenjm/polii.gene.call).
+These output ratio files can easily be converted to TDF for viewing in [IGV](http://www.broadinstitute.org/software/igv/) using igvtools.  The files can be processed for peak calling using [find_peaks](http://github.com/owenjm/find_peaks) or, if using RNA pol II Targeted DamID, transcribed genes can be determined using [polii.gene.call](http://github.com/owenjm/polii.gene.call).
 
 ## Citation
 
