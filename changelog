@@ -1,3 +1,6 @@
+[v1.4.1]
+*  Fixed issues with samtools v1.3 (this version of samtools introduced backwards incompatibilities when using the 'sort' function.  damidseq_pipeline now checks for the version number and should support all versions of samtools.)
+
 [v1.4]
 *  New read-extension method: by default, reads are now only extended as far as the next GATC fragment.  Use --extension_method=full to disable this feature and extend every read by the value of --len.
 *  Output format is now bedgraph by default.  Use --output_format=gff to restore the previous default.  Changing the default to bedgraph allows users to create TDF tracks directly within the graphical IGV tools, making it easier for end users.
