@@ -25,8 +25,8 @@ use 5.010;
 
 $|++;
 
-my $version = "1.4.1";
-print STDERR "\ndamidseq_pipeline v$version\nCopyright © 2013-15, Owen Marshall\n\n";
+my $version = "1.4.2";
+print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-16, Owen Marshall\n\n";
 
 # Global options
 my %vars = (
@@ -218,7 +218,7 @@ sub check_paths {
 	if ($vars{'bowtie2_genome_dir'} && !(-e "$vars{'bowtie2_genome_dir'}.1.bt2")) {
 		print STDERR "WARTNING: --bowtie2_genome_dir option specified but files with basename does not appear to exist.\n\n(Please ensure you specify both the directory and the basename of the .bt2 index files -- i.e. if files are dmel_r5.57.1.bt2 dmel_r5.57.2.bt2 etc, located inside the directory Dm_r5.57, use '[path to]/Dm_r5.57/dmel_r5.57' as the option value ...\n\n";
 		if ($no_paths) {
-			print STDERR "*** not saving file paths automatically (use --save_defaults=1 to override)\n\n";
+			print STDERR "*** not saving file paths automatically (use --save_defaults to override)\n\n";
 			$no_paths=0;
 		}
 	}
@@ -651,7 +651,14 @@ sub extend_reads_gatc {
 			my $seqs;
 			my @non_chrs;
 			while (<IN>) {
+				
+				if (/^\@/) {
+					print OUT;
+					next;
+				}
+				
 				chomp;
+				
 				my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
 				
 				$c++;
@@ -660,11 +667,7 @@ sub extend_reads_gatc {
 					print "  $lp"."M lines processed ...\r";
 				}
 				
-				unless ($seq) {
-					print OUT "$_\n";
-					next;
-				}
-				
+				next unless $seq;
 				next unless $mapq>=$vars{'q'};
 				
 				unless ($gatc{$chr}) {
