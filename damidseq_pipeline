@@ -25,7 +25,7 @@ use 5.010;
 
 $|++;
 
-my $version = "1.4.2";
+my $version = "1.4.3";
 print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-16, Owen Marshall\n\n";
 
 # Global options
@@ -213,6 +213,7 @@ sub check_paths {
 			print STDERR "*** not saving file paths automatically (use --save_defaults=1 to override)\n\n";
 			$no_paths=0;
 		}
+		exit 1;
 	}
 	
 	if ($vars{'bowtie2_genome_dir'} && !(-e "$vars{'bowtie2_genome_dir'}.1.bt2")) {
@@ -221,6 +222,7 @@ sub check_paths {
 			print STDERR "*** not saving file paths automatically (use --save_defaults to override)\n\n";
 			$no_paths=0;
 		}
+		exit 1;
 	}
 	
 	# Parameter checks:
@@ -323,7 +325,8 @@ sub process_input_files {
 	}
 	
 	unless (@in_files) {
-		printout("ERROR: no FASTQ or BAM files found (and no files specified on the command-line).\n(Use --help to see command-line options ...)\n\n")
+		printout("ERROR: no FASTQ or BAM files found (and no files specified on the command-line).\n(Use --help to see command-line options ...)\n\n");
+		exit 1;
 	}
 	
 	printout("*** Reading data files ***\n");
@@ -868,10 +871,36 @@ sub calc_bins {
 			printout("  Warning: paired-end reads detected.  Support for paired-end reads is experimental ...\n  Please report any bugs encountered at owenjm.github.io/damidseq_pipeline\n\n");
 		}
 		
-		# sanity check
+		# sanity check on coverage
 		unless (keys(%cov)) {
 			printout("  Error:  no coverage was found.  Exiting ...\n\n");
 			exit 1;
+		}
+		
+		# sanity check on chromosome names
+		unless ( map {my $t = $_; grep {$_ eq $t} keys(%cov)} keys(%gatc) ) {
+			if ( map {s/chr//gi; my $t = $_; grep {s/chr//gi; $_ eq $t} keys(%cov)} keys(%gatc) ) {
+				printout("  Warning: chromosome name mismatch detected -- removing 'chr' from definitions and continuing ...\n");
+				if (grep {m/chr/} keys %cov) {
+					my %new_cov;
+					@new_cov{ map {s/chr//; $_} keys %cov} = values %cov;
+					%cov = %new_cov;
+					
+					my %new_bases;
+					@new_bases{ map {s/chr//; $_} keys %bases} = values %bases;
+					%bases = %new_bases;
+					
+				} elsif (grep {m/chr/} keys %gatc) {
+					my %new_gatc;
+					@new_gatc{ map {s/chr//; $_} keys %gatc} = values %gatc;
+					%gatc = %new_gatc;
+				} else {
+					printout("  Error: can't find a 'chr' key definition in either hash (please contact the author for support)\n");
+					exit 1;
+				}
+			} else {
+				printout("  Error: chromsome definitions between bam and GATC file do not match!\n");
+			}
 		}
 		
 		my $read_bins=0;
