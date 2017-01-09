@@ -1,3 +1,12 @@
+[v1.4.4]
+*  Fixed issue with some externally-generated BAM files
+
+[v1.4.3]
+*  Better handling of chromosome names
+
+[v1.4.2]
+*  Small improvements to SAM file handling
+
 [v1.4.1]
 *  Fixed issues with samtools v1.3 (this version of samtools introduced backwards incompatibilities when using the 'sort' function.  damidseq_pipeline now checks for the version number and should support all versions of samtools.)
 

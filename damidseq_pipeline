@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Copyright © 2013-16, Owen Marshall
+# Copyright © 2013-17, Owen Marshall
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ use 5.010;
 
 $|++;
 
-my $version = "1.4.3";
-print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-16, Owen Marshall\n\n";
+my $version = "1.4.4";
+print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-17, Owen Marshall\n\n";
 
 # Global options
 my %vars = (
@@ -847,9 +847,12 @@ sub calc_bins {
 				($pstart, $pend) = sort($pos, $pos + $tlen);
 			} else {
 				# single ends
-				$cigar =~ s/[^\d]//g;
+				my $readlen;
+				foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
+					$readlen += $cig;
+				}
 				$pstart = $pos;
-				$pend = $pos+$cigar;
+				$pend = $pos+$readlen;
 			}
 			
 			if ($lines % 20000 == 0) {
