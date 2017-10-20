@@ -1,3 +1,6 @@
+[v1.4.5]
+*  Added --ps_debug option to explicitly display pseudocounts calculation
+
 [v1.4.4]
 *  Fixed issue with some externally-generated BAM files
 
