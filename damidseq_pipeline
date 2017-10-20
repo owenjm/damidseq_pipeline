@@ -25,7 +25,7 @@ use 5.010;
 
 $|++;
 
-my $version = "1.4.4";
+my $version = "1.4.5";
 print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-17, Owen Marshall\n\n";
 
 # Global options
@@ -50,8 +50,10 @@ my %vars = (
 	'norm_override'=> 0,
 	'output_format'=>'bedgraph',
 	'method_subtract' => 0,
+	#'paired_ends' => 0,
 	'pseudocounts' => 0,
 	'ps_factor' => 10,
+	'ps_debug' => 0,
 	'min_norm_value' => -5,
 	'max_norm_value' => 5,
 	'norm_steps' => 300,
@@ -91,7 +93,9 @@ my %vars_details = (
 	'output_format' => 'Output tracks in this format [gff/bedgraph]',
 	'method_subtract' => 'Output values are (Dam_fusion - Dam) instead of log2(Dam_fusion/Dam) (not recommended)',
 	'pseudocounts' => 'Add this value of psuedocounts instead (default: optimal number of pseudocounts determined algorithmically)',
+	#'paired_ends' => 'Process paired-end reads (experimental, use with caution)',
 	'ps_factor' => 'Value of c in c*(reads/bins) formula for calculating pseudocounts (default = 10)',
+	'ps_debug' => 'Print extra debugging info on pseudocount calculations in log file',
 	'min_norm_value' => 'Minimum log2 value to limit normalisation search at (default = -5)',
 	'max_norm_value' => 'Maximum log2 value to limit normalisation search at (default = +5)',
 	'norm_steps' => 'Number of points in normalisation routine (default = 300)',
@@ -1097,6 +1101,14 @@ sub write_file {
 	
 	my $print_psc = sprintf("%0.2f",$pseudocounts);
 	printout("  ... adding $print_psc pseudocounts to each sample\n");
+	
+	if ($vars{'ps_debug'}) {
+		if ($vars{'pseudocounts'}) {
+			printout "      (Pseudocounts set via --pseudocounts=$vars{'pseudocounts'} command-line option";
+		} else {
+			printout "      ($print_psc pseudocounts = $vars{'ps_factor'} [ps_factor] * $psc_min [min_reads] / $bins{$n} [bins])";
+		}
+	}
 	
 	open (OUT, '>', $fout) || die "Unable to open $fout for writing: $!\n";
 	print OUT qq(track type=bedGraph name="$protname-vs-Dam" description="$protname DamIDseq"\n) if $vars{'output_format'} =~ m/^bed/;
