@@ -1,3 +1,12 @@
+[v1.4.6]
+*  New feature: paired-end reads are now handled natively at the fastq level.  Use the --paired flag to enable, and your paired reads should be automagically detected and aligned
+*  Changed: BAM file format is now used natively without SAM intermediates at all levels (also fixes the recent samtools version handling bug)
+*  Changed: paired-end reads are selected based on the 0x2 bit on the SAM file format bitwise FLAG (reads aligned in proper pair)
+*  Fixed: paired-end read counts are enumerated correctly
+*  Removed: --keep_sam and --only_sam flags (as SAM format is no longer used)
+*  Added: --keep_original_bams flag to retain the non-extended reads BAM file when using single-end sequencing
+*  Changed: warning on missing chromosomal identities in GATC alignment made more friendly and less confusing
+
 [v1.4.5]
 *  Added --ps_debug option to explicitly display pseudocounts calculation
 

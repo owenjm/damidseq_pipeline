@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Copyright © 2013-17, Owen Marshall
+# Copyright © 2013-20, Owen Marshall
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ use 5.010;
 
 $|++;
 
-my $version = "1.4.5";
-print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-17, Owen Marshall\n\n";
+my $version = "1.4.6";
+print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-20, Owen Marshall\n\n";
 
 # Global options
 my %vars = (
@@ -41,6 +41,7 @@ my %vars = (
 	'bedtools_path' => '',
 	'gatc_frag_file' => '',
 	'kde_plot' => 0,
+	'keep_original_bams' => 0,
 	'bowtie2_genome_dir' => '',
 	'threads' => 7,
 	'full_data_files' => 0,
@@ -50,7 +51,7 @@ my %vars = (
 	'norm_override'=> 0,
 	'output_format'=>'bedgraph',
 	'method_subtract' => 0,
-	#'paired_ends' => 0,
+	'paired' => 0,
 	'pseudocounts' => 0,
 	'ps_factor' => 10,
 	'ps_debug' => 0,
@@ -67,8 +68,6 @@ my %vars = (
 	'dam' => '',
 	'out_name' => '',
 	'no_file_filters' => '',
-	'keep_sam' => 0,
-	'only_sam' => 0
 );
 
 my %vars_details = (
@@ -83,6 +82,7 @@ my %vars_details = (
 	'bedtools_path' => 'path to BEDTools executable (leave blank if in path)',
 	'gatc_frag_file' => 'GFF file containing all instances of the sequence GATC',
 	'kde_plot' => 'create an Rplot of the kernel density fit for normalisation (requires R)',
+	'keep_original_bams' => 'Keep unextended BAM files if using single-end reads',
 	'bowtie2_genome_dir' => 'Directory and basename for bowtie2 .bt2 indices',
 	'threads' => 'threads for bowtie2 to use',
 	'full_data_files' => 'Output full binned ratio files (not only GATC array)',
@@ -93,7 +93,7 @@ my %vars_details = (
 	'output_format' => 'Output tracks in this format [gff/bedgraph]',
 	'method_subtract' => 'Output values are (Dam_fusion - Dam) instead of log2(Dam_fusion/Dam) (not recommended)',
 	'pseudocounts' => 'Add this value of psuedocounts instead (default: optimal number of pseudocounts determined algorithmically)',
-	#'paired_ends' => 'Process paired-end reads (experimental, use with caution)',
+	'paired' => 'Process paired-end reads (experimental, use with caution)',
 	'ps_factor' => 'Value of c in c*(reads/bins) formula for calculating pseudocounts (default = 10)',
 	'ps_debug' => 'Print extra debugging info on pseudocount calculations in log file',
 	'min_norm_value' => 'Minimum log2 value to limit normalisation search at (default = -5)',
@@ -109,8 +109,6 @@ my %vars_details = (
 	'dam' => 'Specify file to use as Dam control',
 	'out_name' => 'Use this as the fusion-protein name when saving the final ratio',
 	'no_file_filters' => 'Do not trim filenames for output',
-	'keep_sam' => 'Do not delete .sam file',
-	'only_sam' => 'Do not generate bam file'
 );
 
 my @vars_unsaved = (
@@ -180,7 +178,7 @@ executable_check();
 ###
 
 align_sequences();
-load_gatc_frags() unless ($vars{'extension_method'} eq 'full' && $vars{'just_align'});
+load_gatc_frags() unless (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'});
 
 if ($vars{'extension_method'} eq 'full') {
 	extend_reads_full();
@@ -188,9 +186,9 @@ if ($vars{'extension_method'} eq 'full') {
 	extend_reads_gatc();
 }
 
-calc_bins();
-
 exit 0 if $vars{'just_align'};
+
+calc_bins();
 
 if ($vars{'norm_method'} eq 'kde') {
 	find_quants();
@@ -266,6 +264,12 @@ sub executable_check {
 	unless ($samtools_version) {
 		printout("\nWarning: samtools executable found but unable to determine the version.  We'll assume it's v1.2 or greater and hope for the best ...\n");
 		$samtools_version = 1.2;
+	}
+	
+	# samtools confusing version numbers workaround
+	my ($big, $little) = $samtools_version =~ m/(\d+)\.(\d+)/;
+	if (defined($big) && defined($little)) {
+		$samtools_version = $big*1000 + $little;
 	}
 }
 
@@ -357,25 +361,62 @@ EOT
 		}
 	} elsif (@in_files && !(-e $index_file)) {
 		foreach my $l (@in_files) {
-			my ($name,$dir,$ext) = fileparse($l, qr/\.[^.]*/);
-			($name) = $name =~ m/(.*?)(_|-ext|\.)/i unless $vars{'no_file_filters'};
+			my ($name_long,$dir,$ext) = fileparse($l, qr/\..*/);
+			my $name;
+			if ($vars{'no_file_filters'}) {
+				$name = $name_long;
+			} else {
+				($name) = $name_long =~ m/(.*?)(_|-ext|\.)/i;
+			}
+			$name ||= $name_long;
+			
 			$vars{'bamfiles'} = 1 if $ext =~ /bam/;
 			
-			if ($files{$name}) {
-				#same name already in use
-				my $i = 1;
-				while ($files{"$name.$i"}) {
-					$i++;
+			if ($vars{'paired'} && !$vars{'bamfiles'}) {
+				$vars{'extend_reads'} = 0;
+				# find paired end fastq files
+				my ($pmatch) = $name_long =~ m/(.*[R|_])[1|2](?=[_\d]*$)/;
+				
+				unless ($pmatch) {
+					print "Error: $name_long not paired?  File ignored ...\n";
+					next;
 				}
-				$name = "$name.$i";
-			}
-			
-			print STDOUT "$name\t$l\n";
-			$files{$name}[0]=$l;
+				
+				my $pmatch1 = $pmatch."1";
+				my $pmatch2 = $pmatch."2";
+				
+				$name =~ s/[R|_][_\d]+$//; 
+				
+				if ($name_long =~ m/$pmatch1/) {
+					$files{$name}[0]=$l;
+				} elsif ($name_long =~ m/$pmatch2/) {
+					$files{$name}[1]=$l;
+				} else {
+					die("Error: paired-end reads set but cannot find paired-end flag: $name_long\nExiting.\n\n");
+				}
+			} else {
+				if ($files{$name}) {
+					#same name already in use
+					my $i = 1;
+					while ($files{"$name.$i"}) {
+						$i++;
+					}
+					$name = "$name.$i";
+				}
+				$files{$name}[0]=$l;
+			}			
+		}
+		
+		foreach my $name (sort(keys %files)) {
 			unless ($vars{'just_align'}) {
-				check_dam_name($name, $l);
+				check_dam_name($name, @{$files{$name}}[0]);
+			}
+			print "$name:\n";
+			foreach my $p ( @{$files{$name}} ) {
+				print "\t$p\n";
 			}
 		}
+		
 	} elsif (-e $index_file) {
 		open (NORM, "<$index_file") || die "Unable to open index file for reading: $!\n";
 		my @norm = <NORM>;
@@ -442,7 +483,7 @@ EOT
 
 sub check_dam_name {
 	my ($name, $file) = @_;
-	if ($vars{'dam'}) {
+	if ($vars{'dam'} && !($vars{'paired'})) {
 		$damname = $name if $vars{'dam'} eq $file;
 	} elsif ($name =~ m/^dam/i) {
 		die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
@@ -565,11 +606,24 @@ sub align_sequences {
 		printout("\n*** Aligning files with bowtie2 ***\n");
 		foreach my $fn (keys %files) {
 			my $pair1 = $files{$fn}[0];
+			my $pair2 = $files{$fn}[1];
 			
 			printout("Now working on $fn ...\n");
 			
 			if ($vars{'bowtie'}) {
-				$bowtie_output{$fn} = `$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S $fn.sam 2>&1`;
+				#$bowtie_output{$fn} = $vars{'paired'} ?
+				#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 -S $fn.sam 2>&1` :
+				#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S $fn.sam 2>&1`;
+				
+				#print "$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam\n";
+								
+				$vars{'paired'} ?
+					`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam` :
+					`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1  2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam`;
+				
+				open(my $tmp, '<', "tmp.out") || die "Cannot open temporary bowtie output for reading: $!\n";
+				$bowtie_output{$fn} = join("",<$tmp>);
+				unlink("tmp.out");
 				
 				unless ($bowtie_output{$fn}) {
 					printout("Error: no data returned from bowtie2.  Exiting.\n\n");
@@ -588,10 +642,10 @@ sub extend_reads_full {
 		printout("*** Extending reads to $vars{'len'} bases (full extension) ***\n");
 		foreach my $fn (keys %files) {
 			printout("Reading input file: $fn ...\n");
-			open (IN, "<$fn.sam") || die "Unable to read $fn: $!\n";
+			open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
 			
 			printout("  Processing data ...\n");
-			open (OUT, ">$fn-ext$vars{'len'}.sam");
+			open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
 			
 			my $c=0;
 			my $seqs;
@@ -636,9 +690,10 @@ sub extend_reads_full {
 			close OUT;
 			
 			# the original SAM files are huge, so we nuke them
-			unlink("$fn.sam") unless $vars{'keep_sam'};
+			#unlink("$fn.sam") unless $vars{'keep_sam'};
 			
 			printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n");
+			unlink("$fn.bam") unless $vars{'keep_original_bams'};
 		}
 	}
 }
@@ -649,10 +704,10 @@ sub extend_reads_gatc {
 		printout("*** Extending reads up to $vars{'len'} bases ***\n");
 		foreach my $fn (keys %files) {
 			printout("Reading input file: $fn ...\n");
-			open (IN, "<$fn.sam") || die "Unable to read $fn: $!\n";
+			open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
 			
 			printout("  Processing data ...\n");
-			open (OUT, ">$fn-ext$vars{'len'}.sam");
+			open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
 			
 			my $c=0;
 			my $seqs;
@@ -764,9 +819,10 @@ sub extend_reads_gatc {
 			}
 			
 			# the original SAM files are huge, so we nuke them
-			unlink("$fn.sam") unless $vars{'keep_sam'};
+			#unlink("$fn.sam") unless $vars{'keep_sam'};
 			
 			printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n\n");
+			unlink("$fn.bam") unless $vars{'keep_original_bams'};
 		}
 	}
 }
@@ -780,40 +836,9 @@ sub calc_bins {
 		
 		printout("\nNow working on $fn ...\n");
 		
-		unless ($vars{'bamfiles'}) {
-			printout("Generating .bam file ...\n");
-			`$vars{'samtools_path'}samtools view -Sb $fn.sam > $fn.unsort.bam`;
-			
-			unlink("$fn.sam") unless $vars{'keep_sam'};
-			
-			# sort the bam file ...
-			printout("  sorting ...\n");
-			if ($samtools_version < 1.3) {
-				`$vars{'samtools_path'}samtools sort $fn.unsort.bam $fn`;
-			} else {
-				`$vars{'samtools_path'}samtools sort -T . -o $fn.bam $fn.unsort.bam`;
-			}
-			
-			unlink("$fn.unsort.bam");
-		}
-		
 		# Obtain readcounts via samtools ...
 		my $seqs = `$vars{'samtools_path'}samtools view -c $fn.bam`;
 		chomp($seqs);
-		if ($seqs == 0) {
-			printout("Error: no reads obtained from bamfile ... exiting.\n\n");
-			exit 1;
-		}
-		
-		$counts{$n}=$seqs;
-		printout("  $seqs reads\n");
-		
-		# short-circuit for just_align option
-		next if $vars{'just_align'};
-		
-		if ($n eq $damname) {
-			$denom = $counts{$n};
-		}
 		
 		printout("  Generating bins from $fn.bam ...\n");
 		
@@ -821,6 +846,7 @@ sub calc_bins {
 		my %gff;
 		my %bases;
 		my $lines;
+		my $reads = 0;
 		# We now manually calculate coverage, rather than using bedtools' -coverage option, for both memory considerations and ease of use.
 		# (bedtools' -coverage memory consumption is pretty crazy, getting up to 8Gb for ~25M reads ... this implementation uses about 1/10th of that memory.)
 		# Speed considerations are similar (this seems to be slightly faster ...)
@@ -846,7 +872,8 @@ sub calc_bins {
 			if ($pnext) {
 				# paired ends
 				$paired_flag = 1;
-				next unless $tlen && abs($tlen) < 1500;
+				next unless $flag & 2;
+				#next unless $tlen && abs($tlen) < 1500;
 				next unless $rnext eq '=';
 				($pstart, $pend) = sort($pos, $pos + $tlen);
 			} else {
@@ -859,8 +886,14 @@ sub calc_bins {
 				$pend = $pos+$readlen;
 			}
 			
+			if ($paired_flag) {
+				$reads++ if $flag & 64;
+			} else {
+				$reads++;
+			}
+			
 			if ($lines % 20000 == 0) {
-				my $pc = sprintf("%0.1f", ($lines*100 / $counts{$n}));
+				my $pc = sprintf("%0.1f", ($lines*100 / $seqs));
 				print STDERR "  $pc% processed ...\r"
 			}
 						
@@ -874,8 +907,20 @@ sub calc_bins {
 		}
 		close COV;
 		
+		$counts{$n}=$reads;
+		printout("  $reads mapped fragments\n");
+		
+		if ($reads == 0) {
+			printout("Error: no mapped reads obtained from bamfile ... exiting.\n\n");
+			exit 1;
+		}
+		
+		if ($n eq $damname) {
+			$denom = $counts{$n};
+		}
+		
 		if ($paired_flag) {
-			printout("  Warning: paired-end reads detected.  Support for paired-end reads is experimental ...\n  Please report any bugs encountered at owenjm.github.io/damidseq_pipeline\n\n");
+			printout("  Paired-end reads detected in bamfile\n");
 		}
 		
 		# sanity check on coverage
@@ -992,7 +1037,7 @@ sub calc_bins {
 		
 		if (@non_chrs) {
 			my $missing = join(', ', @non_chrs);
-			print STDERR "  Warning: alignment contains chromosome identities not found in GATC file (see log file for details; this is normal if unmapped assemblies and the mitochondrial genome have been excluded from the GATC file.)";
+			print STDERR "  Alignment contains chromosome identities not found in GATC file (normal if unmapped assemblies and the mitochondrial genome have been excluded from the GATC file; see log file for details)";
 			print LOG "  Warning: alignment contains chromosome identities not found in GATC file:\n  $missing\n";
 		}
 		
