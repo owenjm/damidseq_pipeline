@@ -18,6 +18,7 @@
 # USA
 
 use strict;
+use warnings;
 use File::Copy;
 use File::Basename;
 use IPC::Cmd qw[can_run run];
