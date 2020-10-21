@@ -125,19 +125,14 @@ my @gatc_simple;
 my @cli;
 my @in_files;
 
-my %ampnorm;
 my %files;
 my %index;
-my %ar;
 my %array;
 my %bowtie_output;
 my %gatc;
-my %gatc_reverse_hash;
-my %gatc_chr;
 my %gatc_frags;
 my %gatc_frag_score;
 my %gatc_index;
-my %prot_hash;
 my %norm_factors;
 my %seg;
 my %full_tracks;
@@ -146,12 +141,9 @@ my %bins;
 
 my $HOME = (getpwuid($<))[7];
 my $pi = 3.1415926536;
-my $gatc_fragments;
 my $denom;
 my $damname;
-my $frags;
 my $no_paths;
-my $windows_file;
 my $samtools_version;
 
 # Read parameters if exist
@@ -998,9 +990,7 @@ sub calc_bins {
 					print STDOUT "  $pc\% processed ...\r";
 				}
 				
-				my $sum;
 				my @data;
-				my $count;
 				# Run through the probe array to find the probes that lie within the fragment
 				foreach my $l ($last_input .. @{$gff{$chr}}-2) {
 					# Takes way too long to scan through the entire array for each GATC fragment, and is in theory unnecessary
@@ -1008,8 +998,7 @@ sub calc_bins {
 					# (relies on an ordered array of data, hence the sorting above)
 					
 					my ($start, $end, $score) = @{$gff{$chr}[$l]};
-					my ($startn, $endn, $scoren) = @{$gff{$chr}[$l+1]};
-					
+
 					$last_input= ($l-1 > 0 ? $l-1 : 0);
 					
 					if ($start > $midb) {
@@ -1336,7 +1325,6 @@ sub kden {
 	# gaussian kernel density estimator
 	my @x = @_;
 	
-	my $s = 0;
 	my $n = $#x;
 	
 	# KDE is measured over an equidistant grid:
@@ -1547,14 +1535,13 @@ sub load_gatc_frags {
 	%gatc = %tmp;
 	
 	# Build gatc_index lookup hash for new read extension method
-	my $bin = 200;
 	foreach my $k (keys %gatc) {
 		
 		my @tmp = @{ $gatc{$k} };
 		
 		foreach my $i (0 .. $#tmp) {
 			my $site = $tmp[$i];
-			my $bin = int($site/200)+1;
+			my $bin = int($site/200)+1; #TODO: convert magic number to global variable.
 			$gatc_index{$k}{$bin} ||= $i;
 		}
 		
