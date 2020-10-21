@@ -210,7 +210,7 @@ exit 0;
 sub check_paths {
 	# Check paths
 	if ($vars{'gatc_frag_file'} && !(-e "$vars{'gatc_frag_file'}")) {
-		print STDERR "WARTNING: --gatc_frag_file option specified but file does not appear to exist.\n";
+		print STDERR "WARNING: --gatc_frag_file option specified but file does not appear to exist.\n";
 		if ($no_paths) {
 			print STDERR "*** not saving file paths automatically (use --save_defaults=1 to override)\n\n";
 			$no_paths=0;
@@ -219,7 +219,7 @@ sub check_paths {
 	}
 	
 	if ($vars{'bowtie2_genome_dir'} && !(-e "$vars{'bowtie2_genome_dir'}.1.bt2")) {
-		print STDERR "WARTNING: --bowtie2_genome_dir option specified but files with basename does not appear to exist.\n\n(Please ensure you specify both the directory and the basename of the .bt2 index files -- i.e. if files are dmel_r5.57.1.bt2 dmel_r5.57.2.bt2 etc, located inside the directory Dm_r5.57, use '[path to]/Dm_r5.57/dmel_r5.57' as the option value ...\n\n";
+		print STDERR "WARNING: --bowtie2_genome_dir option specified but files with basename does not appear to exist.\n\n(Please ensure you specify both the directory and the basename of the .bt2 index files -- i.e. if files are dmel_r5.57.1.bt2 dmel_r5.57.2.bt2 etc, located inside the directory Dm_r5.57, use '[path to]/Dm_r5.57/dmel_r5.57' as the option value ...\n\n";
 		if ($no_paths) {
 			print STDERR "*** not saving file paths automatically (use --save_defaults to override)\n\n";
 			$no_paths=0;
@@ -230,7 +230,7 @@ sub check_paths {
 	# Parameter checks:
 	for my $p ('gatc_frag_file','bowtie2_genome_dir') {
 		unless ($vars{$p}) {
-			die("Please use the --$p option to specifiy the $vars_details{$p} ...\n\n");
+			die("Please use the --$p option to specify the $vars_details{$p} ...\n\n");
 		}
 	}
 	
@@ -430,7 +430,7 @@ EOT
 			my ($i, $name) = split(/\s+/,$l);
 			
 			unless (($name) && ($i =~ m/.*?(?:0*)+\d+/i)) {
-				die("\nERROR: misformatted index.txt file.\n\n$index_txt_error\n")
+				die("\nERROR: malformed index.txt file.\n\n$index_txt_error\n")
 			}
 			
 			printout("$i\t$name\n");
@@ -951,7 +951,7 @@ sub calc_bins {
 					exit 1;
 				}
 			} else {
-				printout("  Error: chromsome definitions between bam and GATC file do not match!\n");
+				printout("  Error: chromosome definitions between bam and GATC file do not match!\n");
 			}
 		}
 		
@@ -1003,7 +1003,7 @@ sub calc_bins {
 				# Run through the probe array to find the probes that lie within the fragment
 				foreach my $l ($last_input .. @{$gff{$chr}}-2) {
 					# Takes way too long to scan through the entire array for each GATC fragment, and is in theory unnecessary
-					# This proceedure uses $last_input to store the last probe found within an array, and start the next search from there
+					# This procedure uses $last_input to store the last probe found within an array, and start the next search from there
 					# (relies on an ordered array of data, hence the sorting above)
 					
 					my ($start, $end, $score) = @{$gff{$chr}[$l]};
