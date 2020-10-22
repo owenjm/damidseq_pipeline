@@ -1277,7 +1277,8 @@ sub find_quants {
 		my @frags;
 				
 		printout("Now working on $prot ...\n");
-	
+
+		# Collect non-zero scores in @frags.
 		foreach my $k (keys %gatc_frag_score) {
 			my $score = $gatc_frag_score{$k}{$prot} || 0;
 			next unless $score > 0; # use only non-zero elements of the array
