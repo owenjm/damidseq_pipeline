@@ -1205,12 +1205,14 @@ sub find_norm_factor {
 			my %qscore;
 			$score{1} = $gatc_frag_score{$key}{$damname};
 			$score{2} = $gatc_frag_score{$key}{$n};
-			
+
+			# Skip if either score is zero.
 			next unless ($score{1} && $score{2});
 			
 			$qscore{1} = qsc($score{1},$damname);
 			$qscore{2} = qsc($score{2}, $n);
-				
+
+			# Include ratio in the computation of normalisation factor if the Dam alone value is between specified deciles, and the Dam-fused value lies before a specified decile.
 			if (($qscore{1}>=$vars{'qscore1min'}) && ($qscore{1}<=$vars{'qscore1max'}) && ($qscore{2}<=$vars{'qscore2max'})) {
 				if ($vars{'old_norm_method'}) {
 					# old approximation method provided for compatibility -- not recommended
