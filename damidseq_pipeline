@@ -1409,23 +1409,23 @@ sub kdenmax {
 }
 
 sub max {
-    my ($max, @vars) = @_;
+	my ($max, @vars) = @_;
 	my $index=0;
 	$max||=0;
-    for my $i (0..$#vars) {
-        ($max, $index) = ($vars[$i], $i+1) if $vars[$i] > $max;
-    }
-    return ($index, $max);
+	for my $i (0..$#vars) {
+		($max, $index) = ($vars[$i], $i+1) if $vars[$i] > $max;
+	}
+	return ($index, $max);
 }
 
 sub min {
-    my ($min, @vars) = @_;
+	my ($min, @vars) = @_;
 	my $index=0;
 	$min||=0;
-    for my $i (0..$#vars) {
-        ($min, $index) = ($vars[$i],$i+1) if $vars[$i] < $min;
-    }
-    return ($index, $min);
+	for my $i (0..$#vars) {
+		($min, $index) = ($vars[$i],$i+1) if $vars[$i] < $min;
+	}
+	return ($index, $min);
 }
 
 sub spearmans {
