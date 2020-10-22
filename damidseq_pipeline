@@ -571,17 +571,21 @@ sub save_defaults {
 	
 	# reset defaults
 	if ($vars{'reset_defaults'}) {
-		my $name;
-		if ($vars{'reset_defaults'} eq '1') {
-			$name = '';
-		} else {
-			$name = ".$vars{'reset_defaults'}";
-		}
-		
-		unlink("$HOME/.config/damid_pipeline/defaults$name") if -e "$HOME/.config/damid_pipeline/defaults$name";
-		print STDERR "Defaults reset ... please restart.\n\n";
-		exit 0;
+		reset_defaults();
 	}
+}
+
+sub reset_defaults {
+	my $name;
+	if ($vars{'reset_defaults'} eq '1') {
+		$name = '';
+	} else {
+		$name = ".$vars{'reset_defaults'}";
+	}
+
+	unlink("$HOME/.config/damid_pipeline/defaults$name") if -e "$HOME/.config/damid_pipeline/defaults$name";
+	print STDERR "Defaults reset ... please restart.\n\n";
+	exit 0;
 }
 
 sub parameter_check {
