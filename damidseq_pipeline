@@ -182,10 +182,12 @@ executable_check();
 align_sequences();
 load_gatc_frags() unless (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'});
 
-if ($vars{'extension_method'} eq 'full') {
-	extend_reads_full();
-} elsif ($vars{'extend_reads'}) {
-	extend_reads_gatc();
+if ($vars{'extend_reads'}) {
+	if ($vars{'extension_method'} eq 'full') {
+		extend_reads_full();
+	} else {
+		extend_reads_gatc();
+	}
 }
 
 exit 0 if $vars{'just_align'};
@@ -637,63 +639,61 @@ sub align_sequences {
 
 sub extend_reads_full {
 	# Extend reads
-	if ($vars{'extend_reads'}) {
-		printout("*** Extending reads to $vars{'len'} bases (full extension) ***\n");
-		foreach my $fn (keys %files) {
-			printout("Reading input file: $fn ...\n");
-			open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
-			
-			printout("  Processing data ...\n");
-			open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
-			
-			my $c=0;
-			my $seqs;
-			while (<IN>) {
-				chomp;
-				my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
-				
-				$c++;
-				unless ($c%100000) {
-					print "  $c lines processed ...\r";
-				}
-				
-				unless ($seq) {
-					print OUT "$_\n";
-					next;
-				}
-				
-				next unless $mapq>=$vars{'q'};
-				
-				$seqs++;
-				
-				my $readlen;
-				foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
-					$readlen += $cig;
-				}
-				
-				$cigar="$vars{'len'}M";
-				
-				if ($flag == 16) {
-					# minus strand
-					$pos -= $vars{'len'} - $readlen;
-					$pos = max(1,$pos);
-				}
-				
-				$seq = "*"; # We're extending reads and we have no sequence information for the extension ...
-				$qual= "*"; #  ... ditto for quality.  Thankfully the SAMfile spec allows for no sequence or quality information.
-				
-				print OUT join("\t", $qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual), "\n";
-				
+	printout("*** Extending reads to $vars{'len'} bases (full extension) ***\n");
+	foreach my $fn (keys %files) {
+		printout("Reading input file: $fn ...\n");
+		open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
+
+		printout("  Processing data ...\n");
+		open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
+
+		my $c=0;
+		my $seqs;
+		while (<IN>) {
+			chomp;
+			my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
+
+			$c++;
+			unless ($c%100000) {
+				print "  $c lines processed ...\r";
 			}
-			close IN;
-			close OUT;
-			
-			# the original SAM files are huge, so we nuke them
-			#unlink("$fn.sam") unless $vars{'keep_sam'};
-			
-			printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n");
-			unlink("$fn.bam") unless $vars{'keep_original_bams'};
+
+			unless ($seq) {
+				print OUT "$_\n";
+				next;
+			}
+
+			next unless $mapq>=$vars{'q'};
+
+			$seqs++;
+
+			my $readlen;
+			foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
+				$readlen += $cig;
+			}
+
+			$cigar="$vars{'len'}M";
+
+			if ($flag == 16) {
+				# minus strand
+				$pos -= $vars{'len'} - $readlen;
+				$pos = max(1,$pos);
+			}
+
+			$seq = "*"; # We're extending reads and we have no sequence information for the extension ...
+			$qual= "*"; #  ... ditto for quality.  Thankfully the SAMfile spec allows for no sequence or quality information.
+
+			print OUT join("\t", $qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual), "\n";
+
 		}
+		close IN;
+		close OUT;
+
+		# the original SAM files are huge, so we nuke them
+		#unlink("$fn.sam") unless $vars{'keep_sam'};
+
+		printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n");
+		unlink("$fn.bam") unless $vars{'keep_original_bams'};
 	}
 }
 
