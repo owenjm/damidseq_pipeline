@@ -184,7 +184,7 @@ load_gatc_frags() unless (($vars{'extension_method'} eq 'full' || $vars{'paired'
 
 if ($vars{'extension_method'} eq 'full') {
 	extend_reads_full();
-} else {
+} elsif ($vars{'extend_reads'}) {
 	extend_reads_gatc();
 }
 
@@ -699,130 +699,128 @@ sub extend_reads_full {
 
 sub extend_reads_gatc {
 	# Extend reads
-	if ($vars{'extend_reads'}) {
-		printout("*** Extending reads up to $vars{'len'} bases ***\n");
-		foreach my $fn (keys %files) {
-			printout("Reading input file: $fn ...\n");
-			open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
-			
-			printout("  Processing data ...\n");
-			open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
-			
-			my $c=0;
-			my $seqs;
-			my @non_chrs;
-			while (<IN>) {
-				
-				if (/^\@/) {
-					print OUT;
-					next;
-				}
-				
-				chomp;
-				
-				my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
-				
-				$c++;
-				unless ($c%100000) {
-					my $lp = sprintf("%0.2f",$c / 1000000);
-					print "  $lp"."M lines processed ...\r";
-				}
-				
-				next unless $seq;
-				next unless $mapq>=$vars{'q'};
-				
-				unless ($gatc{$chr}) {
-					# We do the missing chromosome check here if we're extending to GATCs
-					push @non_chrs, $chr;
-					next;
-				}
-				
-				$seqs++;
-				
-				my $readlen;
-				foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
-					$readlen += $cig;
-				}
-				
-				$cigar="$vars{'len'}M";
-				
-				# find next GATC after reads
-				
-				# It takes far too long to grep an entire chromosome's worth of GATC fragments for GATC sites internal to the extension length.  The following is an inelegant but very effective solution for speeding the process up: essentially, GATC fragments are binned into a hash when read in, and the hash is used as a lookup table.  There may be issues with long extension lengths, but it's fairly versatile.
-				if ($flag == 16) {
-					
-					### minus strand
-					my $fiveprime_search = $pos - ($vars{'len'} - $readlen);
-					my $threeprime_search = $pos;
-					
-					my $fp_bin = int($fiveprime_search/200)+1;
-					my $tp_bin = int($threeprime_search/200)+2;
-					
-					my $fp_index = $gatc_index{$chr}{$fp_bin} || $#{ $gatc{$chr}}-2;
-					my $tp_index = $gatc_index{$chr}{$tp_bin} || $#{ $gatc{$chr}}-2;
-					
-					my @search_slice = @{ $gatc{$chr}}[$fp_index .. $tp_index];
-					
-					my @hits = grep {$_ > $fiveprime_search && $_ < $threeprime_search} @search_slice;
-					
-					if (@hits) {
-						# an intervening GATC
-						my $closest = (sort {$a <=> $b} @hits)[$#hits];
-						my $revised_len = $pos+$readlen - $closest;
-						$cigar = $revised_len."M";
-						$pos = $closest;
-					} else {
-						# no Great GATC
-						$pos -= $vars{'len'} - $readlen;
-						$pos = max(1,$pos);
-					}
+	printout("*** Extending reads up to $vars{'len'} bases ***\n");
+	foreach my $fn (keys %files) {
+		printout("Reading input file: $fn ...\n");
+		open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
+
+		printout("  Processing data ...\n");
+		open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
+
+		my $c=0;
+		my $seqs;
+		my @non_chrs;
+		while (<IN>) {
+
+			if (/^\@/) {
+				print OUT;
+				next;
+			}
+
+			chomp;
+
+			my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
+
+			$c++;
+			unless ($c%100000) {
+				my $lp = sprintf("%0.2f",$c / 1000000);
+				print "  $lp"."M lines processed ...\r";
+			}
+
+			next unless $seq;
+			next unless $mapq>=$vars{'q'};
+
+			unless ($gatc{$chr}) {
+				# We do the missing chromosome check here if we're extending to GATCs
+				push @non_chrs, $chr;
+				next;
+			}
+
+			$seqs++;
+
+			my $readlen;
+			foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
+				$readlen += $cig;
+			}
+
+			$cigar="$vars{'len'}M";
+
+			# find next GATC after reads
+
+			# It takes far too long to grep an entire chromosome's worth of GATC fragments for GATC sites internal to the extension length.  The following is an inelegant but very effective solution for speeding the process up: essentially, GATC fragments are binned into a hash when read in, and the hash is used as a lookup table.  There may be issues with long extension lengths, but it's fairly versatile.
+			if ($flag == 16) {
+
+				### minus strand
+				my $fiveprime_search = $pos - ($vars{'len'} - $readlen);
+				my $threeprime_search = $pos;
+
+				my $fp_bin = int($fiveprime_search/200)+1;
+				my $tp_bin = int($threeprime_search/200)+2;
+
+				my $fp_index = $gatc_index{$chr}{$fp_bin} || $#{ $gatc{$chr}}-2;
+				my $tp_index = $gatc_index{$chr}{$tp_bin} || $#{ $gatc{$chr}}-2;
+
+				my @search_slice = @{ $gatc{$chr}}[$fp_index .. $tp_index];
+
+				my @hits = grep {$_ > $fiveprime_search && $_ < $threeprime_search} @search_slice;
+
+				if (@hits) {
+					# an intervening GATC
+					my $closest = (sort {$a <=> $b} @hits)[$#hits];
+					my $revised_len = $pos+$readlen - $closest;
+					$cigar = $revised_len."M";
+					$pos = $closest;
 				} else {
-					### plus strand
-					my $fiveprime_search = $pos + $readlen;
-					my $threeprime_search = $pos + $vars{'len'};
-										
-					my $fp_bin = int($fiveprime_search/200)+1;
-					my $tp_bin = int($threeprime_search/200)+2;
-					
-					my $fp_index = $gatc_index{$chr}{$fp_bin} || $#{ $gatc{$chr}}-2;
-					my $tp_index = $gatc_index{$chr}{$tp_bin} || $#{ $gatc{$chr}}-2;
-					
-					my @search_slice = @{ $gatc{$chr}}[$fp_index .. $tp_index];
-					
-					my @hits = grep {$_ > $fiveprime_search && $_ < $threeprime_search} @search_slice;
-					
-					if (@hits) {
-						# an intervening GATC
-						my $closest = (sort {$a <=> $b} @hits)[0];
-						my $revised_len = $closest - $pos;
-						$cigar = $revised_len."M";
-					} else {
-						# no Great GATC
-						$pos = max(1,$pos);
-					}
+					# no Great GATC
+					$pos -= $vars{'len'} - $readlen;
+					$pos = max(1,$pos);
 				}
-				
-				$seq = "*"; # We're extending reads and we have no sequence information for the extension ...
-				$qual= "*"; #  ... ditto for quality.  Thankfully the SAMfile spec allows for no sequence or quality information.
-				
-				print OUT join("\t", $qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual), "\n";
-				
+			} else {
+				### plus strand
+				my $fiveprime_search = $pos + $readlen;
+				my $threeprime_search = $pos + $vars{'len'};
+
+				my $fp_bin = int($fiveprime_search/200)+1;
+				my $tp_bin = int($threeprime_search/200)+2;
+
+				my $fp_index = $gatc_index{$chr}{$fp_bin} || $#{ $gatc{$chr}}-2;
+				my $tp_index = $gatc_index{$chr}{$tp_bin} || $#{ $gatc{$chr}}-2;
+
+				my @search_slice = @{ $gatc{$chr}}[$fp_index .. $tp_index];
+
+				my @hits = grep {$_ > $fiveprime_search && $_ < $threeprime_search} @search_slice;
+
+				if (@hits) {
+					# an intervening GATC
+					my $closest = (sort {$a <=> $b} @hits)[0];
+					my $revised_len = $closest - $pos;
+					$cigar = $revised_len."M";
+				} else {
+					# no Great GATC
+					$pos = max(1,$pos);
+				}
 			}
-			close IN;
-			close OUT;
-			
-			if (@non_chrs) {
-				my $missing = join("\n    ", sort(uniq(@non_chrs)));
-				print STDERR "  Warning: alignment contains chromosome identities not found in GATC file (see log file for details; this is normal if unmapped assemblies and the mitochondrial genome have been excluded from the GATC file.)\n";
-				print LOG "  Warning: alignment contains chromosome identities not found in GATC file:\n    $missing\n\n";
-			}
-			
-			# the original SAM files are huge, so we nuke them
-			#unlink("$fn.sam") unless $vars{'keep_sam'};
-			
-			printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n\n");
-			unlink("$fn.bam") unless $vars{'keep_original_bams'};
+
+			$seq = "*"; # We're extending reads and we have no sequence information for the extension ...
+			$qual= "*"; #  ... ditto for quality.  Thankfully the SAMfile spec allows for no sequence or quality information.
+
+			print OUT join("\t", $qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual), "\n";
+
 		}
+		close IN;
+		close OUT;
+
+		if (@non_chrs) {
+			my $missing = join("\n    ", sort(uniq(@non_chrs)));
+			print STDERR "  Warning: alignment contains chromosome identities not found in GATC file (see log file for details; this is normal if unmapped assemblies and the mitochondrial genome have been excluded from the GATC file.)\n";
+			print LOG "  Warning: alignment contains chromosome identities not found in GATC file:\n    $missing\n\n";
+		}
+
+		# the original SAM files are huge, so we nuke them
+		#unlink("$fn.sam") unless $vars{'keep_sam'};
+
+		printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n\n");
+		unlink("$fn.bam") unless $vars{'keep_original_bams'};
 	}
 }
 
