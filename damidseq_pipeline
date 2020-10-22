@@ -154,7 +154,16 @@ process_cli(1);
 
 # CLI processing
 check_paths();
-save_defaults();
+
+# Save defaults
+if ($vars{'save_defaults'}) {
+	save_defaults();
+}
+
+# Reset defaults
+if ($vars{'reset_defaults'}) {
+	reset_defaults();
+}
 
 # Log file
 init_log_file();
@@ -547,32 +556,25 @@ sub read_defaults_file {
 
 sub save_defaults {
 	# Save parameters if requested
-	if ($vars{'save_defaults'}) {
-		my %donotsave = map {$_ => 1} @vars_unsaved;
-		
-		my $name;
-		if ($vars{'save_defaults'} eq '1') {
-			$name = '';
-		} else {
-			$name = ".$vars{'save_defaults'}";
-		}
-		
-		print STDERR "Writing defaults to file ...\n";
-		open(DEFAULTS,">$HOME/.config/damid_pipeline/defaults$name") || die("Cannot open defaults file for writing: $!\n\n");
-		for my $p (keys %vars) {
-			next if $donotsave{$p};
-			next unless $vars{$p};
-			print DEFAULTS "$p\t$vars{$p}\n";
-		}
-		print STDERR "Done.\n\n";
-		close DEFAULTS;
-		exit 0;
+	my %donotsave = map {$_ => 1} @vars_unsaved;
+
+	my $name;
+	if ($vars{'save_defaults'} eq '1') {
+		$name = '';
+	} else {
+		$name = ".$vars{'save_defaults'}";
 	}
-	
-	# reset defaults
-	if ($vars{'reset_defaults'}) {
-		reset_defaults();
+
+	print STDERR "Writing defaults to file ...\n";
+	open(DEFAULTS,">$HOME/.config/damid_pipeline/defaults$name") || die("Cannot open defaults file for writing: $!\n\n");
+	for my $p (keys %vars) {
+		next if $donotsave{$p};
+		next unless $vars{$p};
+		print DEFAULTS "$p\t$vars{$p}\n";
 	}
+	print STDERR "Done.\n\n";
+	close DEFAULTS;
+	exit 0;
 }
 
 sub reset_defaults {
