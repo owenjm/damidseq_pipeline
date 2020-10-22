@@ -149,6 +149,12 @@ my $samtools_version;
 # Read parameters if exist
 process_cli(0);
 setupconfigdir();
+
+# List current saved options
+if ($vars{'load_defaults'} eq 'list') {
+	print_defaults_files();
+}
+
 read_defaults();
 parameter_check();
 process_cli(1);
@@ -520,22 +526,22 @@ sub setupconfigdir {
 }
 
 sub read_defaults {
+	# Load saved defaults
 	if ($vars{'load_defaults'}) {
-		if ($vars{'load_defaults'} eq 'list') {
+		unless (-e "$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}") {
+			print STDERR "Error: cannot find saved defaults file for '$vars{'load_defaults'}'\n\n";
 			print_defaults_files();
-		} else {
-			unless (-e "$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}") {
-				print STDERR "Error: cannot find saved defaults file for '$vars{'load_defaults'}'\n\n";
-				print_defaults_files();
-			}
-			# load the defaults
-			print STDERR "Loading saved defaults for '$vars{'load_defaults'}' ...\n\n";
-			read_defaults_file("$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}");
 		}
-	} elsif (-e "$HOME/.config/damid_pipeline/defaults") {
-		# read default parameters if exist
-		read_defaults_file("$HOME/.config/damid_pipeline/defaults");
+		print STDERR "Loading saved defaults for '$vars{'load_defaults'}' ...\n\n";
+		return read_defaults_file("$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}");
 	}
+
+	# Read default parameters if they exist
+	if (-e "$HOME/.config/damid_pipeline/defaults") {
+		return read_defaults_file("$HOME/.config/damid_pipeline/defaults");
+	}
+
+	die "Error: cannot read defaults.";
 }
 
 sub print_defaults_files {
