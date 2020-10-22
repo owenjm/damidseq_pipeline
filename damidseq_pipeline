@@ -148,6 +148,7 @@ my $samtools_version;
 
 # Read parameters if exist
 process_cli(0);
+setupconfigdir();
 read_defaults();
 parameter_check();
 process_cli(1);
@@ -502,22 +503,23 @@ sub check_dam_name {
 	}
 }
 
-
-sub read_defaults {
+sub setupconfigdir {
 	# Create config directory if it doesn't exist
 	unless (-d "$HOME/.config") {
 		mkdir("$HOME/.config");
 	}
-	
+
 	unless (-d "$HOME/.config/damid_pipeline") {
 		mkdir("$HOME/.config/damid_pipeline");
 	}
-	
-	# Migration for version 1.0 
+
+	# Migration for version 1.0
 	if (-e "$HOME/.config/damid_pipeline_defaults") {
 		move("$HOME/.config/damid_pipeline_defaults","$HOME/.config/damid_pipeline/defaults")
 	}
-	
+}
+
+sub read_defaults {
 	if ($vars{'load_defaults'}) {
 		if ($vars{'load_defaults'} eq 'list') {
 			print_defaults_files();
