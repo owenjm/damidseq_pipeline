@@ -183,7 +183,9 @@ if ($vars{'bowtie'}) {
 	align_sequences();
 }
 
-load_gatc_frags() unless (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'});
+unless (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'}) {
+	load_gatc_frags();
+}
 
 if ($vars{'extend_reads'}) {
 	if ($vars{'extension_method'} eq 'full') {
