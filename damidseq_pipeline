@@ -179,7 +179,10 @@ executable_check();
 ### Pipeline workflow
 ###
 
-align_sequences();
+if ($vars{'bowtie'}) {
+	align_sequences();
+}
+
 load_gatc_frags() unless (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'});
 
 if ($vars{'extend_reads'}) {
@@ -602,36 +605,33 @@ sub parameter_check {
 }
 
 sub align_sequences {
-	if ($vars{'bowtie'}) {
+	printout("\n*** Aligning files with bowtie2 ***\n");
+	foreach my $fn (keys %files) {
+		my $pair1 = $files{$fn}[0];
+		my $pair2 = $files{$fn}[1];
 
-		printout("\n*** Aligning files with bowtie2 ***\n");
-		foreach my $fn (keys %files) {
-			my $pair1 = $files{$fn}[0];
-			my $pair2 = $files{$fn}[1];
+		printout("Now working on $fn ...\n");
 
-			printout("Now working on $fn ...\n");
+		#$bowtie_output{$fn} = $vars{'paired'} ?
+		#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 -S $fn.sam 2>&1` :
+		#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S $fn.sam 2>&1`;
 
-			#$bowtie_output{$fn} = $vars{'paired'} ?
-			#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 -S $fn.sam 2>&1` :
-			#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S $fn.sam 2>&1`;
+		#print "$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam\n";
 
-			#print "$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam\n";
+		$vars{'paired'} ?
+			`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam` :
+			`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1  2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam`;
 
-			$vars{'paired'} ?
-				`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam` :
-				`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1  2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam`;
+		open(my $tmp, '<', "tmp.out") || die "Cannot open temporary bowtie output for reading: $!\n";
+		$bowtie_output{$fn} = join("",<$tmp>);
+		unlink("tmp.out");
 
-			open(my $tmp, '<', "tmp.out") || die "Cannot open temporary bowtie output for reading: $!\n";
-			$bowtie_output{$fn} = join("",<$tmp>);
-			unlink("tmp.out");
-
-			unless ($bowtie_output{$fn}) {
-				printout("Error: no data returned from bowtie2.  Exiting.\n\n");
-				exit 1;
-			}
-
-			printout("$bowtie_output{$fn}\n");
+		unless ($bowtie_output{$fn}) {
+			printout("Error: no data returned from bowtie2.  Exiting.\n\n");
+			exit 1;
 		}
+
+		printout("$bowtie_output{$fn}\n");
 	}
 }
 
