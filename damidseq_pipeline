@@ -251,31 +251,33 @@ sub check_paths {
 }
 
 sub executable_check {
-	# Check for bowtie2 and samtools:
+	# Check for bowtie2
 	unless ($vars{"bamfiles"} || can_run("$vars{'bowtie2_path'}bowtie2")) {
 		printout("\nError: cannot find bowtie2 executable.  Please install bowtie2 or specify the path to bowtie2 with --bowtie2_path.\n\n");
 		exit 1;
 	}
-	
+
+	# Check for samtools
 	unless (can_run("$vars{'samtools_path'}samtools")) {
 		printout("\nError: cannot find samtools executable.  Please install samtools or specify the path to samtools with --samtools_path.\n\n");
 		exit 1;
 	}
 
-	# find samtools version
+	# Find samtools version
 	my @temp = `$vars{'samtools_path'}samtools 2>&1`;
 	foreach (@temp) {
 		next unless my ($v) = /^version: (\d+\.\d+)/i;
 		$samtools_version = $v;
 		print LOG "\nUsing samtools version $v\n";
 	}
-	
+
+	# Check samtools version
 	unless ($samtools_version) {
 		printout("\nWarning: samtools executable found but unable to determine the version.  We'll assume it's v1.2 or greater and hope for the best ...\n");
 		$samtools_version = 1.2;
 	}
 	
-	# samtools confusing version numbers workaround
+	# Samtools confusing version numbers workaround
 	my ($big, $little) = $samtools_version =~ m/(\d+)\.(\d+)/;
 	if (defined($big) && defined($little)) {
 		$samtools_version = $big*1000 + $little;
