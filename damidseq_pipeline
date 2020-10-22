@@ -713,7 +713,7 @@ sub extend_reads_gatc {
 		while (<IN>) {
 
 			if (/^\@/) {
-				print OUT;
+				print OUT "";
 				next;
 			}
 
