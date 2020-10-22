@@ -260,14 +260,14 @@ sub executable_check {
 	unless (can_run("$vars{'samtools_path'}samtools")) {
 		printout("\nError: cannot find samtools executable.  Please install samtools or specify the path to samtools with --samtools_path.\n\n");
 		exit 1;
-	} else {
-		# find samtools version
-		my @temp = `$vars{'samtools_path'}samtools 2>&1`;
-		foreach (@temp) {
-			next unless my ($v) = /^version: (\d+\.\d+)/i;
-			$samtools_version = $v;
-			print LOG "\nUsing samtools version $v\n";
-		}
+	}
+
+	# find samtools version
+	my @temp = `$vars{'samtools_path'}samtools 2>&1`;
+	foreach (@temp) {
+		next unless my ($v) = /^version: (\d+\.\d+)/i;
+		$samtools_version = $v;
+		print LOG "\nUsing samtools version $v\n";
 	}
 	
 	unless ($samtools_version) {
