@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Copyright © 2013-20, Owen Marshall
+# Copyright Â© 2013-20, Owen Marshall
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 # USA
 
 use strict;
+use warnings;
 use File::Copy;
 use File::Basename;
 use IPC::Cmd qw[can_run run];
@@ -124,19 +125,14 @@ my @gatc_simple;
 my @cli;
 my @in_files;
 
-my %ampnorm;
 my %files;
 my %index;
-my %ar;
 my %array;
 my %bowtie_output;
 my %gatc;
-my %gatc_reverse_hash;
-my %gatc_chr;
 my %gatc_frags;
 my %gatc_frag_score;
 my %gatc_index;
-my %prot_hash;
 my %norm_factors;
 my %seg;
 my %full_tracks;
@@ -145,23 +141,36 @@ my %bins;
 
 my $HOME = (getpwuid($<))[7];
 my $pi = 3.1415926536;
-my $gatc_fragments;
 my $denom;
 my $damname;
-my $frags;
 my $no_paths;
-my $windows_file;
 my $samtools_version;
 
 # Read parameters if exist
 process_cli(0);
+setupconfigdir();
+
+# List current saved options
+if ($vars{'load_defaults'} eq 'list') {
+	print_defaults_files();
+}
+
 read_defaults();
 parameter_check();
 process_cli(1);
 
 # CLI processing
 check_paths();
-save_defaults();
+
+# Save defaults
+if ($vars{'save_defaults'}) {
+	save_defaults();
+}
+
+# Reset defaults
+if ($vars{'reset_defaults'}) {
+	reset_defaults();
+}
 
 # Log file
 init_log_file();
@@ -177,13 +186,20 @@ executable_check();
 ### Pipeline workflow
 ###
 
-align_sequences();
-load_gatc_frags() unless (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'});
+if ($vars{'bowtie'}) {
+	align_sequences();
+}
 
-if ($vars{'extension_method'} eq 'full') {
-	extend_reads_full();
-} else {
-	extend_reads_gatc();
+unless (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'}) {
+	load_gatc_frags();
+}
+
+if ($vars{'extend_reads'}) {
+	if ($vars{'extension_method'} eq 'full') {
+		extend_reads_full();
+	} else {
+		extend_reads_gatc();
+	}
 }
 
 exit 0 if $vars{'just_align'};
@@ -210,7 +226,7 @@ exit 0;
 sub check_paths {
 	# Check paths
 	if ($vars{'gatc_frag_file'} && !(-e "$vars{'gatc_frag_file'}")) {
-		print STDERR "WARTNING: --gatc_frag_file option specified but file does not appear to exist.\n";
+		print STDERR "WARNING: --gatc_frag_file option specified but file does not appear to exist.\n";
 		if ($no_paths) {
 			print STDERR "*** not saving file paths automatically (use --save_defaults=1 to override)\n\n";
 			$no_paths=0;
@@ -219,7 +235,7 @@ sub check_paths {
 	}
 	
 	if ($vars{'bowtie2_genome_dir'} && !(-e "$vars{'bowtie2_genome_dir'}.1.bt2")) {
-		print STDERR "WARTNING: --bowtie2_genome_dir option specified but files with basename does not appear to exist.\n\n(Please ensure you specify both the directory and the basename of the .bt2 index files -- i.e. if files are dmel_r5.57.1.bt2 dmel_r5.57.2.bt2 etc, located inside the directory Dm_r5.57, use '[path to]/Dm_r5.57/dmel_r5.57' as the option value ...\n\n";
+		print STDERR "WARNING: --bowtie2_genome_dir option specified but files with basename does not appear to exist.\n\n(Please ensure you specify both the directory and the basename of the .bt2 index files -- i.e. if files are dmel_r5.57.1.bt2 dmel_r5.57.2.bt2 etc, located inside the directory Dm_r5.57, use '[path to]/Dm_r5.57/dmel_r5.57' as the option value ...\n\n";
 		if ($no_paths) {
 			print STDERR "*** not saving file paths automatically (use --save_defaults to override)\n\n";
 			$no_paths=0;
@@ -230,7 +246,7 @@ sub check_paths {
 	# Parameter checks:
 	for my $p ('gatc_frag_file','bowtie2_genome_dir') {
 		unless ($vars{$p}) {
-			die("Please use the --$p option to specifiy the $vars_details{$p} ...\n\n");
+			die("Please use the --$p option to specify the $vars_details{$p} ...\n\n");
 		}
 	}
 	
@@ -242,31 +258,33 @@ sub check_paths {
 }
 
 sub executable_check {
-	# Check for bowtie2 and samtools:
+	# Check for bowtie2
 	unless ($vars{"bamfiles"} || can_run("$vars{'bowtie2_path'}bowtie2")) {
 		printout("\nError: cannot find bowtie2 executable.  Please install bowtie2 or specify the path to bowtie2 with --bowtie2_path.\n\n");
 		exit 1;
 	}
-	
+
+	# Check for samtools
 	unless (can_run("$vars{'samtools_path'}samtools")) {
 		printout("\nError: cannot find samtools executable.  Please install samtools or specify the path to samtools with --samtools_path.\n\n");
 		exit 1;
-	} else {
-		# find samtools version
-		my @temp = `$vars{'samtools_path'}samtools 2>&1`;
-		foreach (@temp) {
-			next unless my ($v) = /^version: (\d+\.\d+)/i;
-			$samtools_version = $v;
-			print LOG "\nUsing samtools version $v\n";
-		}
 	}
-	
+
+	# Find samtools version
+	my @temp = `$vars{'samtools_path'}samtools 2>&1`;
+	foreach (@temp) {
+		next unless my ($v) = /^version: (\d+\.\d+)/i;
+		$samtools_version = $v;
+		print LOG "\nUsing samtools version $v\n";
+	}
+
+	# Check samtools version
 	unless ($samtools_version) {
 		printout("\nWarning: samtools executable found but unable to determine the version.  We'll assume it's v1.2 or greater and hope for the best ...\n");
 		$samtools_version = 1.2;
 	}
 	
-	# samtools confusing version numbers workaround
+	# Samtools confusing version numbers workaround
 	my ($big, $little) = $samtools_version =~ m/(\d+)\.(\d+)/;
 	if (defined($big) && defined($little)) {
 		$samtools_version = $big*1000 + $little;
@@ -430,7 +448,7 @@ EOT
 			my ($i, $name) = split(/\s+/,$l);
 			
 			unless (($name) && ($i =~ m/.*?(?:0*)+\d+/i)) {
-				die("\nERROR: misformatted index.txt file.\n\n$index_txt_error\n")
+				die("\nERROR: malformed index.txt file.\n\n$index_txt_error\n")
 			}
 			
 			printout("$i\t$name\n");
@@ -491,38 +509,39 @@ sub check_dam_name {
 	}
 }
 
-
-sub read_defaults {
+sub setupconfigdir {
 	# Create config directory if it doesn't exist
 	unless (-d "$HOME/.config") {
 		mkdir("$HOME/.config");
 	}
-	
+
 	unless (-d "$HOME/.config/damid_pipeline") {
 		mkdir("$HOME/.config/damid_pipeline");
 	}
-	
-	# Migration for version 1.0 
+
+	# Migration for version 1.0
 	if (-e "$HOME/.config/damid_pipeline_defaults") {
 		move("$HOME/.config/damid_pipeline_defaults","$HOME/.config/damid_pipeline/defaults")
 	}
-	
+}
+
+sub read_defaults {
+	# Load saved defaults
 	if ($vars{'load_defaults'}) {
-		if ($vars{'load_defaults'} eq 'list') {
+		unless (-e "$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}") {
+			print STDERR "Error: cannot find saved defaults file for '$vars{'load_defaults'}'\n\n";
 			print_defaults_files();
-		} else {
-			unless (-e "$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}") {
-				print STDERR "Error: cannot find saved defaults file for '$vars{'load_defaults'}'\n\n";
-				print_defaults_files();
-			}
-			# load the defaults
-			print STDERR "Loading saved defaults for '$vars{'load_defaults'}' ...\n\n";
-			read_defaults_file("$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}");
 		}
-	} elsif (-e "$HOME/.config/damid_pipeline/defaults") {
-		# read default parameters if exist
-		read_defaults_file("$HOME/.config/damid_pipeline/defaults");
+		print STDERR "Loading saved defaults for '$vars{'load_defaults'}' ...\n\n";
+		return read_defaults_file("$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}");
 	}
+
+	# Read default parameters if they exist
+	if (-e "$HOME/.config/damid_pipeline/defaults") {
+		return read_defaults_file("$HOME/.config/damid_pipeline/defaults");
+	}
+
+	die "Error: cannot read defaults.";
 }
 
 sub print_defaults_files {
@@ -554,41 +573,38 @@ sub read_defaults_file {
 
 sub save_defaults {
 	# Save parameters if requested
-	if ($vars{'save_defaults'}) {
-		my %donotsave = map {$_ => 1} @vars_unsaved;
-		
-		my $name;
-		if ($vars{'save_defaults'} eq '1') {
-			$name = '';
-		} else {
-			$name = ".$vars{'save_defaults'}";
-		}
-		
-		print STDERR "Writing defaults to file ...\n";
-		open(DEFAULTS,">$HOME/.config/damid_pipeline/defaults$name") || die("Cannot open defaults file for writing: $!\n\n");
-		for my $p (keys %vars) {
-			next if $donotsave{$p};
-			next unless $vars{$p};
-			print DEFAULTS "$p\t$vars{$p}\n";
-		}
-		print STDERR "Done.\n\n";
-		close DEFAULTS;
-		exit 0;
+	my %donotsave = map {$_ => 1} @vars_unsaved;
+
+	my $name;
+	if ($vars{'save_defaults'} eq '1') {
+		$name = '';
+	} else {
+		$name = ".$vars{'save_defaults'}";
 	}
-	
-	# reset defaults
-	if ($vars{'reset_defaults'}) {
-		my $name;
-		if ($vars{'reset_defaults'} eq '1') {
-			$name = '';
-		} else {
-			$name = ".$vars{'reset_defaults'}";
-		}
-		
-		unlink("$HOME/.config/damid_pipeline/defaults$name") if -e "$HOME/.config/damid_pipeline/defaults$name";
-		print STDERR "Defaults reset ... please restart.\n\n";
-		exit 0;
+
+	print STDERR "Writing defaults to file ...\n";
+	open(DEFAULTS,">$HOME/.config/damid_pipeline/defaults$name") || die("Cannot open defaults file for writing: $!\n\n");
+	for my $p (keys %vars) {
+		next if $donotsave{$p};
+		next unless $vars{$p};
+		print DEFAULTS "$p\t$vars{$p}\n";
 	}
+	print STDERR "Done.\n\n";
+	close DEFAULTS;
+	exit 0;
+}
+
+sub reset_defaults {
+	my $name;
+	if ($vars{'reset_defaults'} eq '1') {
+		$name = '';
+	} else {
+		$name = ".$vars{'reset_defaults'}";
+	}
+
+	unlink("$HOME/.config/damid_pipeline/defaults$name") if -e "$HOME/.config/damid_pipeline/defaults$name";
+	print STDERR "Defaults reset ... please restart.\n\n";
+	exit 0;
 }
 
 sub parameter_check {
@@ -601,229 +617,220 @@ sub parameter_check {
 }
 
 sub align_sequences {
-	if ($vars{'bowtie'}) {
-		
-		printout("\n*** Aligning files with bowtie2 ***\n");
-		foreach my $fn (keys %files) {
-			my $pair1 = $files{$fn}[0];
-			my $pair2 = $files{$fn}[1];
-			
-			printout("Now working on $fn ...\n");
-			
-			if ($vars{'bowtie'}) {
-				#$bowtie_output{$fn} = $vars{'paired'} ?
-				#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 -S $fn.sam 2>&1` :
-				#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S $fn.sam 2>&1`;
-				
-				#print "$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam\n";
-								
-				$vars{'paired'} ?
-					`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam` :
-					`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1  2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam`;
-				
-				open(my $tmp, '<', "tmp.out") || die "Cannot open temporary bowtie output for reading: $!\n";
-				$bowtie_output{$fn} = join("",<$tmp>);
-				unlink("tmp.out");
-				
-				unless ($bowtie_output{$fn}) {
-					printout("Error: no data returned from bowtie2.  Exiting.\n\n");
-					exit 1;
-				}
-				
-				printout("$bowtie_output{$fn}\n");
-			}
+	printout("\n*** Aligning files with bowtie2 ***\n");
+	foreach my $fn (keys %files) {
+		my $pair1 = $files{$fn}[0];
+		my $pair2 = $files{$fn}[1];
+
+		printout("Now working on $fn ...\n");
+
+		#$bowtie_output{$fn} = $vars{'paired'} ?
+		#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 -S $fn.sam 2>&1` :
+		#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S $fn.sam 2>&1`;
+
+		#print "$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam\n";
+
+		$vars{'paired'} ?
+			`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam` :
+			`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1  2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam`;
+
+		open(my $tmp, '<', "tmp.out") || die "Cannot open temporary bowtie output for reading: $!\n";
+		$bowtie_output{$fn} = join("",<$tmp>);
+		unlink("tmp.out");
+
+		unless ($bowtie_output{$fn}) {
+			printout("Error: no data returned from bowtie2.  Exiting.\n\n");
+			exit 1;
 		}
+
+		printout("$bowtie_output{$fn}\n");
 	}
 }
 
 sub extend_reads_full {
 	# Extend reads
-	if ($vars{'extend_reads'}) {
-		printout("*** Extending reads to $vars{'len'} bases (full extension) ***\n");
-		foreach my $fn (keys %files) {
-			printout("Reading input file: $fn ...\n");
-			open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
-			
-			printout("  Processing data ...\n");
-			open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
-			
-			my $c=0;
-			my $seqs;
-			while (<IN>) {
-				chomp;
-				my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
-				
-				$c++;
-				unless ($c%100000) {
-					print "  $c lines processed ...\r";
-				}
-				
-				unless ($seq) {
-					print OUT "$_\n";
-					next;
-				}
-				
-				next unless $mapq>=$vars{'q'};
-				
-				$seqs++;
-				
-				my $readlen;
-				foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
-					$readlen += $cig;
-				}
-				
-				$cigar="$vars{'len'}M";
-				
-				if ($flag == 16) {
-					# minus strand
-					$pos -= $vars{'len'} - $readlen;
-					$pos = max(1,$pos);
-				}
-				
-				$seq = "*"; # We're extending reads and we have no sequence information for the extension ...
-				$qual= "*"; #  ... ditto for quality.  Thankfully the SAMfile spec allows for no sequence or quality information.
-				
-				print OUT join("\t", $qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual), "\n";
-				
+	printout("*** Extending reads to $vars{'len'} bases (full extension) ***\n");
+	foreach my $fn (keys %files) {
+		printout("Reading input file: $fn ...\n");
+		open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
+
+		printout("  Processing data ...\n");
+		open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
+
+		my $c=0;
+		my $seqs;
+		while (<IN>) {
+			chomp;
+			my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
+
+			$c++;
+			unless ($c%100000) {
+				print "  $c lines processed ...\r";
 			}
-			close IN;
-			close OUT;
-			
-			# the original SAM files are huge, so we nuke them
-			#unlink("$fn.sam") unless $vars{'keep_sam'};
-			
-			printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n");
-			unlink("$fn.bam") unless $vars{'keep_original_bams'};
+
+			unless ($seq) {
+				print OUT "$_\n";
+				next;
+			}
+
+			next unless $mapq>=$vars{'q'};
+
+			$seqs++;
+
+			my $readlen;
+			foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
+				$readlen += $cig;
+			}
+
+			$cigar="$vars{'len'}M";
+
+			if ($flag == 16) {
+				# minus strand
+				$pos -= $vars{'len'} - $readlen;
+				$pos = max(1,$pos);
+			}
+
+			$seq = "*"; # We're extending reads and we have no sequence information for the extension ...
+			$qual= "*"; #  ... ditto for quality.  Thankfully the SAMfile spec allows for no sequence or quality information.
+
+			print OUT join("\t", $qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual), "\n";
+
 		}
+		close IN;
+		close OUT;
+
+		# the original SAM files are huge, so we nuke them
+		#unlink("$fn.sam") unless $vars{'keep_sam'};
+
+		printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n");
+		unlink("$fn.bam") unless $vars{'keep_original_bams'};
 	}
 }
 
 sub extend_reads_gatc {
 	# Extend reads
-	if ($vars{'extend_reads'}) {
-		printout("*** Extending reads up to $vars{'len'} bases ***\n");
-		foreach my $fn (keys %files) {
-			printout("Reading input file: $fn ...\n");
-			open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
-			
-			printout("  Processing data ...\n");
-			open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
-			
-			my $c=0;
-			my $seqs;
-			my @non_chrs;
-			while (<IN>) {
-				
-				if (/^\@/) {
-					print OUT;
-					next;
-				}
-				
-				chomp;
-				
-				my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
-				
-				$c++;
-				unless ($c%100000) {
-					my $lp = sprintf("%0.2f",$c / 1000000);
-					print "  $lp"."M lines processed ...\r";
-				}
-				
-				next unless $seq;
-				next unless $mapq>=$vars{'q'};
-				
-				unless ($gatc{$chr}) {
-					# We do the missing chromosome check here if we're extending to GATCs
-					push @non_chrs, $chr;
-					next;
-				}
-				
-				$seqs++;
-				
-				my $readlen;
-				foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
-					$readlen += $cig;
-				}
-				
-				$cigar="$vars{'len'}M";
-				
-				# find next GATC after reads
-				
-				# It takes far too long to grep an entire chromosome's worth of GATC fragments for GATC sites internal to the extension length.  The following is an inelegant but very effective solution for speeding the process up: essentially, GATC fragments are binned into a hash when read in, and the hash is used as a lookup table.  There may be issues with long extension lengths, but it's fairly versatile.
-				if ($flag == 16) {
-					
-					### minus strand
-					my $fiveprime_search = $pos - ($vars{'len'} - $readlen);
-					my $threeprime_search = $pos;
-					
-					my $fp_bin = int($fiveprime_search/200)+1;
-					my $tp_bin = int($threeprime_search/200)+2;
-					
-					my $fp_index = $gatc_index{$chr}{$fp_bin} || $#{ $gatc{$chr}}-2;
-					my $tp_index = $gatc_index{$chr}{$tp_bin} || $#{ $gatc{$chr}}-2;
-					
-					my @search_slice = @{ $gatc{$chr}}[$fp_index .. $tp_index];
-					
-					my @hits = grep {$_ > $fiveprime_search && $_ < $threeprime_search} @search_slice;
-					
-					if (@hits) {
-						# an intervening GATC
-						my $closest = (sort {$a <=> $b} @hits)[$#hits];
-						my $revised_len = $pos+$readlen - $closest;
-						$cigar = $revised_len."M";
-						$pos = $closest;
-					} else {
-						# no Great GATC
-						$pos -= $vars{'len'} - $readlen;
-						$pos = max(1,$pos);
-					}
+	printout("*** Extending reads up to $vars{'len'} bases ***\n");
+	foreach my $fn (keys %files) {
+		printout("Reading input file: $fn ...\n");
+		open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
+
+		printout("  Processing data ...\n");
+		open (OUT, "| $vars{'samtools_path'}samtools view -Shb - > $fn-ext$vars{'len'}.bam");
+
+		my $c=0;
+		my $seqs;
+		my @non_chrs;
+		while (<IN>) {
+
+			if (/^\@/) {
+				print OUT "";
+				next;
+			}
+
+			chomp;
+
+			my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
+
+			$c++;
+			unless ($c%100000) {
+				my $lp = sprintf("%0.2f",$c / 1000000);
+				print "  $lp"."M lines processed ...\r";
+			}
+
+			next unless $seq;
+			next unless $mapq>=$vars{'q'};
+
+			unless ($gatc{$chr}) {
+				# We do the missing chromosome check here if we're extending to GATCs
+				push @non_chrs, $chr;
+				next;
+			}
+
+			$seqs++;
+
+			my $readlen;
+			foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
+				$readlen += $cig;
+			}
+
+			$cigar="$vars{'len'}M";
+
+			# find next GATC after reads
+
+			# It takes far too long to grep an entire chromosome's worth of GATC fragments for GATC sites internal to the extension length.  The following is an inelegant but very effective solution for speeding the process up: essentially, GATC fragments are binned into a hash when read in, and the hash is used as a lookup table.  There may be issues with long extension lengths, but it's fairly versatile.
+			if ($flag == 16) {
+
+				### minus strand
+				my $fiveprime_search = $pos - ($vars{'len'} - $readlen);
+				my $threeprime_search = $pos;
+
+				my $fp_bin = int($fiveprime_search/200)+1;
+				my $tp_bin = int($threeprime_search/200)+2;
+
+				my $fp_index = $gatc_index{$chr}{$fp_bin} || $#{ $gatc{$chr}}-2;
+				my $tp_index = $gatc_index{$chr}{$tp_bin} || $#{ $gatc{$chr}}-2;
+
+				my @search_slice = @{ $gatc{$chr}}[$fp_index .. $tp_index];
+
+				my @hits = grep {$_ > $fiveprime_search && $_ < $threeprime_search} @search_slice;
+
+				if (@hits) {
+					# an intervening GATC
+					my $closest = (sort {$a <=> $b} @hits)[$#hits];
+					my $revised_len = $pos+$readlen - $closest;
+					$cigar = $revised_len."M";
+					$pos = $closest;
 				} else {
-					### plus strand
-					my $fiveprime_search = $pos + $readlen;
-					my $threeprime_search = $pos + $vars{'len'};
-										
-					my $fp_bin = int($fiveprime_search/200)+1;
-					my $tp_bin = int($threeprime_search/200)+2;
-					
-					my $fp_index = $gatc_index{$chr}{$fp_bin} || $#{ $gatc{$chr}}-2;
-					my $tp_index = $gatc_index{$chr}{$tp_bin} || $#{ $gatc{$chr}}-2;
-					
-					my @search_slice = @{ $gatc{$chr}}[$fp_index .. $tp_index];
-					
-					my @hits = grep {$_ > $fiveprime_search && $_ < $threeprime_search} @search_slice;
-					
-					if (@hits) {
-						# an intervening GATC
-						my $closest = (sort {$a <=> $b} @hits)[0];
-						my $revised_len = $closest - $pos;
-						$cigar = $revised_len."M";
-					} else {
-						# no Great GATC
-						$pos = max(1,$pos);
-					}
+					# no Great GATC
+					$pos -= $vars{'len'} - $readlen;
+					$pos = max(1,$pos);
 				}
-				
-				$seq = "*"; # We're extending reads and we have no sequence information for the extension ...
-				$qual= "*"; #  ... ditto for quality.  Thankfully the SAMfile spec allows for no sequence or quality information.
-				
-				print OUT join("\t", $qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual), "\n";
-				
+			} else {
+				### plus strand
+				my $fiveprime_search = $pos + $readlen;
+				my $threeprime_search = $pos + $vars{'len'};
+
+				my $fp_bin = int($fiveprime_search/200)+1;
+				my $tp_bin = int($threeprime_search/200)+2;
+
+				my $fp_index = $gatc_index{$chr}{$fp_bin} || $#{ $gatc{$chr}}-2;
+				my $tp_index = $gatc_index{$chr}{$tp_bin} || $#{ $gatc{$chr}}-2;
+
+				my @search_slice = @{ $gatc{$chr}}[$fp_index .. $tp_index];
+
+				my @hits = grep {$_ > $fiveprime_search && $_ < $threeprime_search} @search_slice;
+
+				if (@hits) {
+					# an intervening GATC
+					my $closest = (sort {$a <=> $b} @hits)[0];
+					my $revised_len = $closest - $pos;
+					$cigar = $revised_len."M";
+				} else {
+					# no Great GATC
+					$pos = max(1,$pos);
+				}
 			}
-			close IN;
-			close OUT;
-			
-			if (@non_chrs) {
-				my $missing = join("\n    ", sort(uniq(@non_chrs)));
-				print STDERR "  Warning: alignment contains chromosome identities not found in GATC file (see log file for details; this is normal if unmapped assemblies and the mitochondrial genome have been excluded from the GATC file.)\n";
-				print LOG "  Warning: alignment contains chromosome identities not found in GATC file:\n    $missing\n\n";
-			}
-			
-			# the original SAM files are huge, so we nuke them
-			#unlink("$fn.sam") unless $vars{'keep_sam'};
-			
-			printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n\n");
-			unlink("$fn.bam") unless $vars{'keep_original_bams'};
+
+			$seq = "*"; # We're extending reads and we have no sequence information for the extension ...
+			$qual= "*"; #  ... ditto for quality.  Thankfully the SAMfile spec allows for no sequence or quality information.
+
+			print OUT join("\t", $qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual), "\n";
+
 		}
+		close IN;
+		close OUT;
+
+		if (@non_chrs) {
+			my $missing = join("\n    ", sort(uniq(@non_chrs)));
+			print STDERR "  Warning: alignment contains chromosome identities not found in GATC file (see log file for details; this is normal if unmapped assemblies and the mitochondrial genome have been excluded from the GATC file.)\n";
+			print LOG "  Warning: alignment contains chromosome identities not found in GATC file:\n    $missing\n\n";
+		}
+
+		# the original SAM files are huge, so we nuke them
+		#unlink("$fn.sam") unless $vars{'keep_sam'};
+
+		printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n\n");
+		unlink("$fn.bam") unless $vars{'keep_original_bams'};
 	}
 }
 
@@ -951,7 +958,7 @@ sub calc_bins {
 					exit 1;
 				}
 			} else {
-				printout("  Error: chromsome definitions between bam and GATC file do not match!\n");
+				printout("  Error: chromosome definitions between bam and GATC file do not match!\n");
 			}
 		}
 		
@@ -997,18 +1004,15 @@ sub calc_bins {
 					print STDOUT "  $pc\% processed ...\r";
 				}
 				
-				my $sum;
 				my @data;
-				my $count;
 				# Run through the probe array to find the probes that lie within the fragment
 				foreach my $l ($last_input .. @{$gff{$chr}}-2) {
 					# Takes way too long to scan through the entire array for each GATC fragment, and is in theory unnecessary
-					# This proceedure uses $last_input to store the last probe found within an array, and start the next search from there
+					# This procedure uses $last_input to store the last probe found within an array, and start the next search from there
 					# (relies on an ordered array of data, hence the sorting above)
 					
 					my ($start, $end, $score) = @{$gff{$chr}[$l]};
-					my ($startn, $endn, $scoren) = @{$gff{$chr}[$l+1]};
-					
+
 					$last_input= ($l-1 > 0 ? $l-1 : 0);
 					
 					if ($start > $midb) {
@@ -1174,26 +1178,21 @@ sub write_file {
 	close OUT;
 }
 
-
 sub generate_score {
 	my ($score1, $score2, $pseudocounts) = @_;
-	my $score;
-	
+
 	if ($vars{'method_subtract'}) {
-		$score = $score2 - $score1;
-	} else {
-		
-		$score1 += $pseudocounts;
-		$score2 += $pseudocounts;
-		
-		unless (($score2) && ($score1)) {
-			$score = 0;
-		} else {
-			$score = log($score2 /$score1)/log(2);
-		}
+		return $score2 - $score1;
 	}
-	
-	return $score;
+		
+	$score1 += $pseudocounts;
+	$score2 += $pseudocounts;
+
+	unless (($score2) && ($score1)) {
+		return 0;
+	}
+
+	return log($score2 /$score1)/log(2);
 }
 
 sub find_norm_factor {
@@ -1214,12 +1213,14 @@ sub find_norm_factor {
 			my %qscore;
 			$score{1} = $gatc_frag_score{$key}{$damname};
 			$score{2} = $gatc_frag_score{$key}{$n};
-			
+
+			# Skip if either score is zero.
 			next unless ($score{1} && $score{2});
 			
 			$qscore{1} = qsc($score{1},$damname);
 			$qscore{2} = qsc($score{2}, $n);
-				
+
+			# Include ratio in the computation of normalisation factor if the Dam alone value is between specified deciles, and the Dam-fused value lies before a specified decile.
 			if (($qscore{1}>=$vars{'qscore1min'}) && ($qscore{1}<=$vars{'qscore1max'}) && ($qscore{2}<=$vars{'qscore2max'})) {
 				if ($vars{'old_norm_method'}) {
 					# old approximation method provided for compatibility -- not recommended
@@ -1284,7 +1285,8 @@ sub find_quants {
 		my @frags;
 				
 		printout("Now working on $prot ...\n");
-	
+
+		# Collect non-zero scores in @frags.
 		foreach my $k (keys %gatc_frag_score) {
 			my $score = $gatc_frag_score{$k}{$prot} || 0;
 			next unless $score > 0; # use only non-zero elements of the array
@@ -1335,7 +1337,6 @@ sub kden {
 	# gaussian kernel density estimator
 	my @x = @_;
 	
-	my $s = 0;
 	my $n = $#x;
 	
 	# KDE is measured over an equidistant grid:
@@ -1409,23 +1410,23 @@ sub kdenmax {
 }
 
 sub max {
-    my ($max, @vars) = @_;
+	my ($max, @vars) = @_;
 	my $index=0;
 	$max||=0;
-    for my $i (0..$#vars) {
-        ($max, $index) = ($vars[$i], $i+1) if $vars[$i] > $max;
-    }
-    return ($index, $max);
+	for my $i (0..$#vars) {
+		($max, $index) = ($vars[$i], $i+1) if $vars[$i] > $max;
+	}
+	return ($index, $max);
 }
 
 sub min {
-    my ($min, @vars) = @_;
+	my ($min, @vars) = @_;
 	my $index=0;
 	$min||=0;
-    for my $i (0..$#vars) {
-        ($min, $index) = ($vars[$i],$i+1) if $vars[$i] < $min;
-    }
-    return ($index, $min);
+	for my $i (0..$#vars) {
+		($min, $index) = ($vars[$i],$i+1) if $vars[$i] < $min;
+	}
+	return ($index, $min);
 }
 
 sub spearmans {
@@ -1546,14 +1547,13 @@ sub load_gatc_frags {
 	%gatc = %tmp;
 	
 	# Build gatc_index lookup hash for new read extension method
-	my $bin = 200;
 	foreach my $k (keys %gatc) {
 		
 		my @tmp = @{ $gatc{$k} };
 		
 		foreach my $i (0 .. $#tmp) {
 			my $site = $tmp[$i];
-			my $bin = int($site/200)+1;
+			my $bin = int($site/200)+1; #TODO: convert magic number to global variable.
 			$gatc_index{$k}{$bin} ||= $i;
 		}
 		
