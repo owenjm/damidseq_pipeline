@@ -872,7 +872,10 @@ sub calc_bins {
 				} 
 				next;
 			}
-			
+
+			# Filter out all additional comments
+			next if $qname =~ m/^@/;
+
 			next if $cigar eq "*";
 			
 			my ($pstart, $pend);
