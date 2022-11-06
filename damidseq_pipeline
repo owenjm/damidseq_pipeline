@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Copyright © 2013-20, Owen Marshall
+# Copyright © 2013-21, Owen Marshall
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ use 5.010;
 
 $|++;
 
-my $version = "1.4.6";
-print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-20, Owen Marshall\n\n";
+my $version = "1.5.3";
+print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-22, Owen Marshall\n\n";
 
 # Global options
 my %vars = (
@@ -43,8 +43,10 @@ my %vars = (
 	'kde_plot' => 0,
 	'keep_original_bams' => 0,
 	'bowtie2_genome_dir' => '',
+	'bowtie2_add_flags' => '',
 	'threads' => 7,
 	'full_data_files' => 0,
+	'as_gatc' => 1,
 	'qscore1min' => 0.4,
 	'qscore1max' => 1.0,
 	'qscore2max' => 0.9,
@@ -52,6 +54,7 @@ my %vars = (
 	'output_format'=>'bedgraph',
 	'method_subtract' => 0,
 	'paired' => 0,
+	'scores_as_rpm' => 1,
 	'pseudocounts' => 0,
 	'ps_factor' => 10,
 	'ps_debug' => 0,
@@ -59,6 +62,8 @@ my %vars = (
 	'max_norm_value' => 5,
 	'norm_steps' => 300,
 	'just_align' => 0,
+	'just_coverage' => 0,
+	'coverage' => 0,
 	'norm_method' => 'kde',
 	'save_defaults' => 0,
 	'load_defaults' => '',
@@ -67,7 +72,14 @@ my %vars = (
 	#'filter' => 0,
 	'dam' => '',
 	'out_name' => '',
-	'no_file_filters' => '',
+	'no_file_filters' => 1,
+	'write_raw' => 0,
+	'rawbins_cmd' => '',
+	'markdup' => 0,
+	'remdups' => 0,
+	'unique' => 0,
+	'kde_inline' => 1,
+	'chipseq' => 0,
 );
 
 my %vars_details = (
@@ -84,8 +96,10 @@ my %vars_details = (
 	'kde_plot' => 'create an Rplot of the kernel density fit for normalisation (requires R)',
 	'keep_original_bams' => 'Keep unextended BAM files if using single-end reads',
 	'bowtie2_genome_dir' => 'Directory and basename for bowtie2 .bt2 indices',
+	'bowtie2_add_flags' => 'Additional flags to use for bowtie2 alignment',
 	'threads' => 'threads for bowtie2 to use',
 	'full_data_files' => 'Output full binned ratio files (not only GATC array)',
+	'as_gatc' => 'Output files at GATC resolution',
 	'qscore1min' => 'min decile for normalising from Dam array',
 	'qscore1max' => 'max decile for normalising from Dam array',
 	'qscore2max' => 'max decile for normalising from fusion-protein array',
@@ -93,14 +107,17 @@ my %vars_details = (
 	'output_format' => 'Output tracks in this format [gff/bedgraph]',
 	'method_subtract' => 'Output values are (Dam_fusion - Dam) instead of log2(Dam_fusion/Dam) (not recommended)',
 	'pseudocounts' => 'Add this value of psuedocounts instead (default: optimal number of pseudocounts determined algorithmically)',
-	'paired' => 'Process paired-end reads (experimental, use with caution)',
+	'paired' => 'Process paired-end reads',
+	'scores_as_rpm' => 'Calculate coverage scores (before normalisation) as reads per million (RPM)',
 	'ps_factor' => 'Value of c in c*(reads/bins) formula for calculating pseudocounts (default = 10)',
 	'ps_debug' => 'Print extra debugging info on pseudocount calculations in log file',
 	'min_norm_value' => 'Minimum log2 value to limit normalisation search at (default = -5)',
 	'max_norm_value' => 'Maximum log2 value to limit normalisation search at (default = +5)',
 	'norm_steps' => 'Number of points in normalisation routine (default = 300)',
 	'just_align' => 'Just align the FASTQ files, generate BAM files, and exit',
-	'norm_method' => "Normalisation method to use; options are:\n\rkde: use kernel density estimation of log2 GATC fragment ratio (default)\n\rrpm: use readcounts per million reads (not recommended for most use cases)",
+	'just_coverage' => 'Align, generate BAMs and calculate coverage; do generate ratio files',
+	'coverage' => 'Save individual coverage bedgraphs',
+	'norm_method' => "Normalisation method to use; options are:\n\rkde: use kernel density estimation of log2 GATC fragment ratio (default)\n\rrpm: use readcounts per million reads (not recommended for most use cases)\n\rrawbins: process raw counts with external normalisation command (set with --rawbins_cmd)",
 	'save_defaults' => "Save runtime parameters as default\n\r(provide a name to differentiate different genomes -- these can be loaded with 'load_defaults')",
 	'load_defaults' => "Load this saved set of defaults\n\r(use 'list' to list current saved options)",
 	'reset_defaults' => 'Delete user-defined parameters',
@@ -109,12 +126,22 @@ my %vars_details = (
 	'dam' => 'Specify file to use as Dam control',
 	'out_name' => 'Use this as the fusion-protein name when saving the final ratio',
 	'no_file_filters' => 'Do not trim filenames for output',
+	'write_raw' => 'Write TSV file with raw counts for each Dam, sample pair',
+	'rawbins_cmd' => "Command to process raw tsv counts for --norm_method=rawbins\n\rOutput of command should be the normalisation factor (use with caution)",
+	'markdup' => "Mark PCR duplicate reads with samtools.\n\r*NB: for ChIP-seq alignment only; do NOT use with DamID data.",
+	'remdups' => "Remove PCR duplicate reads (implies --markdup).\n\r*NB: for ChIP-seq alignment only; do NOT use with DamID data.",
+	'unique' => "Only map uniquely aligning reads",
+	'kde_inline' => 'Use Inline::C for KDE normalisation calculations',
+	'chipseq' => "Process ChIP-seq data\n\r(Equivalent to --just_coverage --as_gatc=0 --remdups --unique --extension_method=full --full_data_files)",
+
 );
 
 my @vars_unsaved = (
 	'save_defaults',
 	'reset_defaults',
 	'load_defaults',
+	'just_align',
+	'just_coverage',
 	'dam',
 	'out_name'
 );
@@ -152,6 +179,14 @@ my $frags;
 my $no_paths;
 my $windows_file;
 my $samtools_version;
+my $kden_sr;
+my $no_inline_C;
+
+# Inline_C sanity checks
+$kden_sr = \&kden_calc_perl unless $vars{'kde_inline'};
+if ($vars{'kde_inline'} && $no_inline_C) {
+	print "** Inline::C not found; falling back on Perl KDE implementation ...\n";
+}
 
 # Read parameters if exist
 process_cli(0);
@@ -166,6 +201,9 @@ save_defaults();
 # Log file
 init_log_file();
 
+# Final sanity checks
+final_sanity_check();
+
 # Read input files
 process_input_files();
 
@@ -178,7 +216,7 @@ executable_check();
 ###
 
 align_sequences();
-load_gatc_frags() unless (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'});
+load_gatc_frags() unless (!$vars{'as_gatc'} || (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'}));
 
 if ($vars{'extension_method'} eq 'full') {
 	extend_reads_full();
@@ -190,9 +228,23 @@ exit 0 if $vars{'just_align'};
 
 calc_bins();
 
+if ($vars{'write_raw'}) {
+	generate_raw_files();
+	exit 0;
+}
+
+if ($vars{'just_coverage'} || $vars{'coverage'}) {
+	generate_cov_files();
+	exit 0 if $vars{'just_coverage'};
+}
+
 if ($vars{'norm_method'} eq 'kde') {
 	find_quants();
 	find_norm_factor();
+}
+
+if ($vars{'norm_method'} eq 'rawbins') {
+	find_norm_factor_raw();
 }
 
 normalize();
@@ -271,6 +323,30 @@ sub executable_check {
 	if (defined($big) && defined($little)) {
 		$samtools_version = $big*1000 + $little;
 	}
+}
+
+sub final_sanity_check {
+	if ($vars{'norm_method'} eq 'rawbins') {
+		unless ($vars{'rawbins_cmd'}) {
+			print STDERR "Error: rawbins normalisation method selected, but no custom command supplied.\n\nPlease use the --rawbins_cmd to specify the command to provide normalisation factors from raw data.\n\n";
+			exit 1;
+		}
+	}
+	
+	if ($vars{'chipseq'}) {
+		$vars{'remdups'} = 1;
+		$vars{'markdup'} = 1;
+		$vars{'as_gatc'} = 0;
+		$vars{'just_coverage'} = 1;
+	}
+	
+	unless ($vars{'as_gatc'}) {
+		$vars{'extension_method'}="full";
+		$vars{'full_data_files'}=1;
+		printout("\n** Warning: no GATC conversion requested; extension_method set to 'full'\n");
+	}
+	
+	$vars{'markdup'} = 1 if $vars{'remdups'};
 }
 
 
@@ -408,7 +484,7 @@ EOT
 		}
 		
 		foreach my $name (sort(keys %files)) {
-			unless ($vars{'just_align'}) {
+			unless ($vars{'just_align'} || $vars{'just_coverage'}) {
 				check_dam_name($name, @{$files{$name}}[0]);
 			}
 			print "$name:\n";
@@ -449,7 +525,7 @@ EOT
 				printout("$index{$i}: Index $i\n");
 				$files{$index{$i}}[0]=$l;
 				
-				unless ($vars{'just_align'}) {
+				unless ($vars{'just_align'} || $vars{'just_coverage'}) {
 					if ($index{$i} =~ m/^dam/i) {
 						die("\nERROR: more than one Dam sample detected.  Please only use one Dam control per run -- specify the files to process on the command-line\n\n") if $damname;
 						$damname = $index{$i}
@@ -464,7 +540,7 @@ EOT
 	}
 	
 	# Check that there's a Dam control sample ...
-	unless ($vars{'just_align'}) {
+	unless ($vars{'just_align'} || $vars{'just_coverage'}) {
 		unless ($damname) {
 			printout("\nError: no Dam control sample detected!\nPlease use include a filename starting with 'Dam', or specify the Dam control file to use with the --dam=[filename] switch\n");
 			exit 1;
@@ -605,33 +681,36 @@ sub align_sequences {
 		
 		printout("\n*** Aligning files with bowtie2 ***\n");
 		foreach my $fn (keys %files) {
+			
+			my $samtools_pipe = "$vars{'samtools_path'}samtools view -Shb - > $fn.bam";
+			if ($vars{'markdup'}) {
+				# additional processing to mark duplicate reads for ChIP-seq alignments
+				## DO NOT USE for DamID read processing!
+				## (as DamID uses PCR duplication to create signal!)
+				
+				$samtools_pipe = "$vars{'samtools_path'}samtools collate -\@$vars{'threads'} -O - | $vars{'samtools_path'}samtools fixmate -O bam,level=0 -m - - | $vars{'samtools_path'}samtools sort -O bam,level=0 -\@$vars{'threads'} - | $vars{'samtools_path'}samtools markdup -\@$vars{'threads'} -s - $fn.bam"
+			}
+		
 			my $pair1 = $files{$fn}[0];
 			my $pair2 = $files{$fn}[1];
 			
 			printout("Now working on $fn ...\n");
 			
-			if ($vars{'bowtie'}) {
-				#$bowtie_output{$fn} = $vars{'paired'} ?
-				#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 -S $fn.sam 2>&1` :
-				#`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S $fn.sam 2>&1`;
-				
-				#print "$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1 -S 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam\n";
-								
-				$vars{'paired'} ?
-					`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -1 $pair1 -2 $pair2 2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam` :
-					`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} -U $pair1  2>tmp.out | $vars{'samtools_path'}samtools view -Shb - > $fn.bam`;
-				
-				open(my $tmp, '<', "tmp.out") || die "Cannot open temporary bowtie output for reading: $!\n";
-				$bowtie_output{$fn} = join("",<$tmp>);
-				unlink("tmp.out");
-				
-				unless ($bowtie_output{$fn}) {
-					printout("Error: no data returned from bowtie2.  Exiting.\n\n");
-					exit 1;
-				}
-				
-				printout("$bowtie_output{$fn}\n");
+			$vars{'paired'} ?
+				`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} $vars{'bowtie2_add_flags'} -1 $pair1 -2 $pair2 2>tmp.out | $samtools_pipe` :
+				`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} $vars{'bowtie2_add_flags'} -U $pair1  2>tmp.out | $samtools_pipe`;
+			
+			open(my $tmp, '<', "tmp.out") || die "Cannot open temporary bowtie output for reading: $!\n";
+			$bowtie_output{$fn} = join("",<$tmp>);
+			unlink("tmp.out");
+			
+			unless ($bowtie_output{$fn}) {
+				printout("Error: no data returned from bowtie2.  Exiting.\n\n");
+				exit 1;
 			}
+			
+			printout("$bowtie_output{$fn}\n");
+			
 		}
 	}
 }
@@ -650,12 +729,18 @@ sub extend_reads_full {
 			my $c=0;
 			my $seqs;
 			while (<IN>) {
+				if (/^\@/) {
+					print OUT;
+					next;
+				}
+				
 				chomp;
 				my ($qname, $flag, $chr, $pos, $mapq, $cigar, $rnext, $pnext, $tlen, $seq, $qual) = split('\s+');
 				
 				$c++;
 				unless ($c%100000) {
-					print "  $c lines processed ...\r";
+					my $lp = sprintf("%0.2f",$c / 1000000);
+					print "  $lp"."M reads processed ...\r";
 				}
 				
 				unless ($seq) {
@@ -668,13 +753,13 @@ sub extend_reads_full {
 				$seqs++;
 				
 				my $readlen;
-				foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
+				foreach my $cig ($cigar =~ m/(\d+)[M|D|N|=|X]/g) {
 					$readlen += $cig;
 				}
 				
 				$cigar="$vars{'len'}M";
 				
-				if ($flag == 16) {
+				if ($flag & 16) {
 					# minus strand
 					$pos -= $vars{'len'} - $readlen;
 					$pos = max(1,$pos);
@@ -726,7 +811,7 @@ sub extend_reads_gatc {
 				$c++;
 				unless ($c%100000) {
 					my $lp = sprintf("%0.2f",$c / 1000000);
-					print "  $lp"."M lines processed ...\r";
+					print "  $lp"."M reads processed ...\r";
 				}
 				
 				next unless $seq;
@@ -741,7 +826,8 @@ sub extend_reads_gatc {
 				$seqs++;
 				
 				my $readlen;
-				foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
+				# used to use [M|I|S|=|X], but this is length of seq, not length of template
+				foreach my $cig ($cigar =~ m/(\d+)[M|D|N|=|X]/g) {
 					$readlen += $cig;
 				}
 				
@@ -750,7 +836,7 @@ sub extend_reads_gatc {
 				# find next GATC after reads
 				
 				# It takes far too long to grep an entire chromosome's worth of GATC fragments for GATC sites internal to the extension length.  The following is an inelegant but very effective solution for speeding the process up: essentially, GATC fragments are binned into a hash when read in, and the hash is used as a lookup table.  There may be issues with long extension lengths, but it's fairly versatile.
-				if ($flag == 16) {
+				if ($flag & 16) {
 					
 					### minus strand
 					my $fiveprime_search = $pos - ($vars{'len'} - $readlen);
@@ -818,9 +904,6 @@ sub extend_reads_gatc {
 				print LOG "  Warning: alignment contains chromosome identities not found in GATC file:\n    $missing\n\n";
 			}
 			
-			# the original SAM files are huge, so we nuke them
-			#unlink("$fn.sam") unless $vars{'keep_sam'};
-			
 			printout("  Seqs extended (>q".$vars{'q'}.") = $seqs\n\n");
 			unlink("$fn.bam") unless $vars{'keep_original_bams'};
 		}
@@ -866,6 +949,15 @@ sub calc_bins {
 				next;
 			}
 			
+			# Filter out all additional comments
+			next if $qname =~ m/^@/;
+			
+			# Remove PCR duplicates if requested
+			next if $vars{'remdups'} && ($flag & 1024);
+			
+			# Remove non-uniquely mapping reads if requested
+			next if $vars{'unique'} && $mapq <= 1;
+			
 			next if $cigar eq "*";
 			
 			my ($pstart, $pend);
@@ -879,7 +971,7 @@ sub calc_bins {
 			} else {
 				# single ends
 				my $readlen;
-				foreach my $cig ($cigar =~ m/(\d+)[M|I|S|=|X]/g) {
+				foreach my $cig ($cigar =~ m/(\d+)[M|D|N|=|X]/g) {
 					$readlen += $cig;
 				}
 				$pstart = $pos;
@@ -915,7 +1007,7 @@ sub calc_bins {
 			exit 1;
 		}
 		
-		if ($n eq $damname) {
+		if ($damname && ($n eq $damname)) {
 			$denom = $counts{$n};
 		}
 		
@@ -929,33 +1021,37 @@ sub calc_bins {
 			exit 1;
 		}
 		
-		# sanity check on chromosome names
-		unless ( map {my $t = $_; grep {$_ eq $t} keys(%cov)} keys(%gatc) ) {
-			if ( map {s/chr//gi; my $t = $_; grep {s/chr//gi; $_ eq $t} keys(%cov)} keys(%gatc) ) {
-				printout("  Warning: chromosome name mismatch detected -- removing 'chr' from definitions and continuing ...\n");
-				if (grep {m/chr/} keys %cov) {
-					my %new_cov;
-					@new_cov{ map {s/chr//; $_} keys %cov} = values %cov;
-					%cov = %new_cov;
-					
-					my %new_bases;
-					@new_bases{ map {s/chr//; $_} keys %bases} = values %bases;
-					%bases = %new_bases;
-					
-				} elsif (grep {m/chr/} keys %gatc) {
-					my %new_gatc;
-					@new_gatc{ map {s/chr//; $_} keys %gatc} = values %gatc;
-					%gatc = %new_gatc;
+		# sanity check on chromosome names if using GATC file
+		if ($vars{'as_gatc'}) {
+			unless ( map {my $t = $_; grep {$_ eq $t} keys(%cov)} keys(%gatc) ) {
+				if ( map {s/chr//gi; my $t = $_; grep {s/chr//gi; $_ eq $t} keys(%cov)} keys(%gatc) ) {
+					printout("  Warning: chromosome name mismatch detected -- removing 'chr' from definitions and continuing ...\n");
+					if (grep {m/chr/} keys %cov) {
+						my %new_cov;
+						@new_cov{ map {s/chr//; $_} keys %cov} = values %cov;
+						%cov = %new_cov;
+						
+						my %new_bases;
+						@new_bases{ map {s/chr//; $_} keys %bases} = values %bases;
+						%bases = %new_bases;
+						
+					} elsif (grep {m/chr/} keys %gatc) {
+						my %new_gatc;
+						@new_gatc{ map {s/chr//; $_} keys %gatc} = values %gatc;
+						%gatc = %new_gatc;
+					} else {
+						printout("  Error: can't find a 'chr' key definition in either hash (please contact the author for support)\n");
+						exit 1;
+					}
 				} else {
-					printout("  Error: can't find a 'chr' key definition in either hash (please contact the author for support)\n");
-					exit 1;
+					printout("  Error: chromsome definitions between bam and GATC file do not match!\n");
 				}
-			} else {
-				printout("  Error: chromsome definitions between bam and GATC file do not match!\n");
 			}
 		}
 		
 		my $read_bins=0;
+		my $real_reads_mil = $reads/1e6;
+		
 		foreach my $chr (keys %cov) {
 			next unless $bases{$chr};
 			for (my $bin = 0; $bin < $bases{$chr}+$vars{'bins'}; $bin += $vars{'bins'}) {
@@ -963,6 +1059,7 @@ sub calc_bins {
 				$read_bins++;
 				my $end = $bin+($vars{'bins'}-1);
 				my $score = $cov{$chr}{$bin} || 0;
+				$score /= $real_reads_mil if $vars{'scores_as_rpm'};
 				
 				push @{$gff{$chr}}, [$bin, $end, $score];
 				if ($vars{'full_data_files'}) {
@@ -977,6 +1074,8 @@ sub calc_bins {
 		my $gatc_nonhits = 0;
 		my $index = 0;
 		my @non_chrs;
+		
+		next unless $vars{'as_gatc'};
 		
 		printout("  Converting to GATC resolution ...                 \n");
 		foreach my $chr (keys %gff) {
@@ -1057,19 +1156,21 @@ sub normalize {
 			$norm = $vars{'norm_override'};
 		} elsif ($vars{'norm_method'} eq 'rpm') {
 			printout("  (using RPM normalisation ...)\n");
-			$norm = $counts{$damname}/$counts{$n};
+			$norm = $vars{"scores_as_rpm"} ? 1 : $counts{$damname}/$counts{$n};
 			printout("  ... normalising by ".sprintf("%0.2f",$norm)."\n");
 		} else {
 			$norm = $norm_factors{$n};
 			printout("  ... normalising by ".sprintf("%0.2f",$norm)."\n");
 		}
 		
-		foreach my $chr (keys %array) {
-			foreach my $bin (keys %{ $array{$chr}}) {
-				if (defined($array{$chr}{$bin}{$n})) {
-					$array{$chr}{$bin}{$n} *= $norm;
-				} else {
-					$array{$chr}{$bin}{$n} = 0;
+		if ($vars{'as_gatc'}) {
+			foreach my $chr (keys %array) {
+				foreach my $bin (keys %{ $array{$chr}}) {
+					if (defined($array{$chr}{$bin}{$n})) {
+						$array{$chr}{$bin}{$n} *= $norm;
+					} else {
+						$array{$chr}{$bin}{$n} = 0;
+					}
 				}
 			}
 		}
@@ -1102,8 +1203,115 @@ sub generate_ratio {
 		
 		printout("Now working on $n ...\n"); 
 
-		write_file($n, 1);
+		write_file($n, 1) if $vars{'as_gatc'};
 		write_file($n, 0) if $vars{'full_data_files'};
+	}
+}
+
+sub generate_raw_files {
+	printout("\n*** Writing raw files ***\n");
+	foreach my $n (keys %files) {
+		next if $n eq $damname;
+		
+		printout("Now working on $n ...\n"); 
+
+		write_raw_bins($n, 1) if $vars{'as_gatc'};
+		write_raw_bins($n, 0) if $vars{'full_data_files'};
+	}
+}
+
+sub generate_cov_files {
+	printout("\n*** Writing coverage files ***\n");
+	foreach my $n (keys %files) {		
+		printout("Now working on $n ...\n");
+		my $write_gatc = $vars{'as_gatc'} ? 1 : 0;
+		write_cov($n, $write_gatc);
+	}
+}
+
+sub calc_pseudocounts {
+	my ($n,$psc_min ) = @_;
+	my $ps = $vars{'ps_factor'}*$psc_min/$bins{$n};
+	$ps /= $psc_min/1e6 if $vars{'scores_as_rpm'};
+	my $pseudocounts = $vars{'pseudocounts'} ? $vars{'pseudocounts'} : $ps;
+	return($pseudocounts);
+}
+
+sub write_raw_bins {
+	my ($n, $write_gatcs) = @_;
+	my %data;
+	
+	# find the lowest number of compared counts -- this will now use a different number of pseudocounts per sample
+	my $psc_min = ($counts{$n}, $denom)[$counts{$n} > $denom];
+	my $pseudocounts = calc_pseudocounts($n,$psc_min); # pseudocounts value is related to total reads/number of bins
+		
+	my $dref = ($write_gatcs ? \%array : \%full_tracks);
+	
+	printout("  Reading Dam ...\n");
+	foreach my $chr (keys %$dref) {
+		foreach my $start (keys %{ $dref -> {$chr}}) {
+			my $score = $dref -> {$chr} -> {$start} -> {$damname};
+			my $end   = $dref -> {$chr} -> {$start} -> {'end'};
+			push @{ $data{$chr}{$start}}, $end;
+			push @{ $data{$chr}{$start}}, $score;
+		}	
+	}
+
+	printout("  Reading $n ...\n");
+	foreach my $chr (keys %$dref) {
+		foreach my $start (keys %{ $dref -> {$chr}}) {
+			my $score = $dref -> {$chr} -> {$start} -> {$n};
+			push @{ $data{$chr}{$start}}, $score;
+		}	
+	}
+	
+	my $track_type = $write_gatcs ? 'gatc' : '';
+	my $protname = $vars{'out_name'} ? $vars{'out_name'} : $n;
+	
+	my $fname = "$protname-vs-Dam.$track_type.raw";
+	my $fout="$fname.tsv";
+	
+	printout("\nWriting raw data to file ...\n");
+	
+	open (OUT, '>', $fout) || die "Unable to open $fout for writing: $!\n";
+	print OUT join("\t", split(/\s/,"chr start end Dam $protname") ), "\n"; # header
+	
+	foreach my $chr (sort keys %data) {
+		foreach my $start (sort {$a <=> $b} keys %{ $data{$chr}}) {
+			my ($end, $score1, $score2) = @{ $data{$chr}{$start}};			
+			print OUT join("\t", $chr, $start, $end, $score1 + $pseudocounts, $score2 + $pseudocounts), "\n";
+		}
+	}
+	close OUT;
+}
+
+sub write_cov {
+	my ($n, $write_gatcs) = @_;
+
+	my %data;
+	
+	my $dref = ($write_gatcs ? \%array : \%full_tracks);
+	
+	my $track_type = $write_gatcs ? 'gatc.' : "$vars{'bins'}bp.";
+	my $protname = $vars{'out_name'} ? $vars{'out_name'} : $n;
+	my $fname = "$protname.$track_type";
+	my $fout=$fname.( $vars{'output_format'} =~ m/^bed/ ? 'bedgraph' : 'gff' );
+	
+	open (my $OUT, '>', $fout) || die "Unable to open $fout for writing: $!\n";
+	print $OUT qq(track type=bedGraph name="$protname" description="$protname DamIDseq Coverage"\n) if $vars{'output_format'} =~ m/^bed/;
+	
+	open(my $FAILED, '>', "regions_without_scores.txt") || die "Unable to open failed_regions file for writing: $!\n";
+	
+	foreach my $chr (sort keys %$dref) {
+		foreach my $start (sort {$a <=> $b} keys %{ $dref -> {$chr}}) {
+			my $score = $dref -> {$chr} -> {$start} -> {$n};
+			my $end   = $dref -> {$chr} -> {$start} -> {'end'};
+			unless (defined($score)) {
+				print $FAILED "$chr:$start-$end\n";
+				next;
+			}
+			print $OUT join("\t", $chr, $start, $end, $score), "\n";
+		}	
 	}
 }
 
@@ -1115,7 +1323,7 @@ sub write_file {
 	
 	# find the lowest number of compared counts -- this will now use a different number of pseudocounts per sample
 	my $psc_min = ($counts{$n}, $denom)[$counts{$n} > $denom];
-	my $pseudocounts = ($vars{'pseudocounts'} ? $vars{'pseudocounts'} : $vars{'ps_factor'}*$psc_min/$bins{$n}); # pseudocounts value is related to total reads/number of bins
+	my $pseudocounts = calc_pseudocounts($n,$psc_min); # pseudocounts value is related to total reads/number of bins
 		
 	my $dref = ($write_gatcs ? \%array : \%full_tracks);
 	
@@ -1140,18 +1348,22 @@ sub write_file {
 	my $track_type = $write_gatcs ? 'gatc.' : '';
 	my $name_spacer = $vars{'method_subtract'} ? ".sub." : ".";
 	my $protname = $vars{'out_name'} ? $vars{'out_name'} : $n;
+	my $normtype = "$vars{'norm_method'}-norm.";
 	
-	my $fname = "$protname-vs-Dam$name_spacer$track_type";
+	my $fname = "$protname-vs-Dam$name_spacer$normtype$track_type";
 	my $fout=$fname.( $vars{'output_format'} =~ m/^bed/ ? 'bedgraph' : 'gff' );
 	
-	my $print_psc = sprintf("%0.2f",$pseudocounts);
-	printout("  ... adding $print_psc pseudocounts to each sample\n");
+	if ($vars{'scores_as_rpm'}) {
+		printout(sprintf("  ... adding %0.2fe-3 pseudocounts to each sample\n",$pseudocounts*1e3));
+	} else {
+		printout(sprintf("  ... adding %0.2f pseudocounts to each sample\n",$pseudocounts));
+	}
 	
 	if ($vars{'ps_debug'}) {
 		if ($vars{'pseudocounts'}) {
 			printout "      (Pseudocounts set via --pseudocounts=$vars{'pseudocounts'} command-line option";
 		} else {
-			printout "      ($print_psc pseudocounts = $vars{'ps_factor'} [ps_factor] * $psc_min [min_reads] / $bins{$n} [bins])";
+			printout sprintf("      (%0.2f pseudocounts = %f [ps_factor] * %f [min_reads] / %f [bins])",$pseudocounts,$vars{'ps_factor'},$psc_min,$bins{$n});
 		}
 	}
 	
@@ -1195,6 +1407,25 @@ sub generate_score {
 	
 	return $score;
 }
+
+sub find_norm_factor_raw {
+	printout("*** Calculating normalisation factor (rawbins method) ***\n");
+	
+	generate_raw_files();
+		
+	foreach my $n (keys %files) {
+		next if $n eq $damname;
+		my $protname = $vars{'out_name'} ? $vars{'out_name'} : $n;
+		
+		printout("Now working on $n ...\n");
+		
+		my $norm = `$vars{'rawbins_cmd'} $protname-vs-Dam.gatc.raw.tsv`;
+		
+		printout("  Norm factor = ".sprintf("%0.2f",$norm)."\n");
+		$norm_factors{$n}=$norm;
+	}
+}
+
 
 sub find_norm_factor {
 	printout("*** Calculating normalisation factor ***\n");
@@ -1333,15 +1564,18 @@ sub stdev {
 
 sub kden {
 	# gaussian kernel density estimator
+	# optionally and ideally uses Inline::C to speed up central calculations
 	my @x = @_;
 	
 	my $s = 0;
 	my $n = $#x;
+	my $sq2pi = sqrt(2*$pi);
 	
 	# KDE is measured over an equidistant grid:
 	my $xmin = max((min(@x))[1],$vars{'min_norm_value'});
 	my $xmax = min((max(@x))[1],$vars{'max_norm_value'});
 	my $steps = $vars{'norm_steps'};
+	my $ys = ($xmax-$xmin)/$steps;
 		
 	## bandwidth via Silverman's estimator (eq 3.31 in Silverman 1986)
 	my ($mean, $sd) = stdev(@x);
@@ -1350,20 +1584,22 @@ sub kden {
 	## kernel density
 	my @sample;
 	foreach my $st (0 .. $steps) {
-		my $y = $xmin + $st*($xmax-$xmin)/$steps;
-		my $pc = sprintf("%0.0f",100*$st/$steps);
-		print STDERR "  Fitting kernel density $pc% complete ...\r";
-		
-		my $s = 0;
-		for my $i (0..$n) {
-			$s += exp(-1/2*(($x[$i]-$y)/$h)**2)/(sqrt(2*$pi));
-		}
-		my $fh = $s/($n*$h);
-		
+		print STDERR sprintf("  Fitting kernel density: %0.1f%% complete ...\r", 100*$st/$steps) unless $st%5;		
+		my $y = $xmin + $st*$ys;
+		my $fh = &$kden_sr($y, $h, $sq2pi, \@x);
 		push @sample, [$y, $fh];
 	}
-	
 	return (@sample);
+}
+
+sub kden_calc_perl {
+	# Fallback code if Inline::C not present ...
+	my ($y, $h, $sq2pi, $xr) = @_;
+	my $s = 0;
+	my $n = $#$xr;
+	map { $s += exp(-1/2*((@$xr[$_]-$y)/$h)**2)/$sq2pi} (0..$n);
+	my $fh = $s/($n*$h);
+	return($fh);
 }
 
 sub iqr {
@@ -1586,4 +1822,40 @@ sub uniq {
 	return unless @_;
 	my %seen;
 	return grep { !$seen{$_}++ } @_;
+}
+
+
+###############################
+### Begin block for Inline_C
+###
+
+BEGIN {
+    eval {
+        require Inline::C;
+        Inline->import('C' => q {
+				#include <math.h>
+				double kden_calc (double y, double h, double sq2pi, SV* terms) {
+					int n = 0;
+					
+					/* Make sure we have an array ref with values */
+					if ((!SvROK(terms))
+					|| (SvTYPE(SvRV(terms)) != SVt_PVAV)
+					|| ((n = av_len((AV *)SvRV(terms))) < 0)) return 0;
+					
+					double result = 0;
+					
+					for (int i = 0; i <= n; i++) {
+							result += exp( (pow((( SvNV(* av_fetch((AV *)SvRV(terms), i, 0)) - y) / h),2) * -0.5) ) / sq2pi;
+					}
+					
+					return result / (n * h);
+				}
+            });
+        $kden_sr = \&kden_calc;
+		1;
+    } or do {
+		print STDERR "Inline::C not found; perl fallback used instead\n";
+		$kden_sr = \&kden_calc_perl;
+		$no_inline_C = 1;
+	}
 }
