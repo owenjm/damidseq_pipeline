@@ -205,7 +205,20 @@
 
       <section class="page__content" itemprop="text">
         
-        <h2 id="v146">v1.4.6</h2>
+        <h2 id="v153">v1.5.3</h2>
+<ul>
+  <li>New feature: <code class="language-plaintext highlighter-rouge">--coverage</code> flag outputs coverage bedGraph track of each sample (useful with Dam-only tracks for CATaDa analysis).  <code class="language-plaintext highlighter-rouge">--just_coverage</code> exits after coverage tracks are written.</li>
+  <li>New feature: Kernel density normalisation routines sped up ~10x via Inline::C.  This is enabled by default, but will only work if the Inline::C module is installed; damidseq_pipeline will fall back on the Perl coded routine if this is not present.  If you want to control explicitly, do so via the <code class="language-plaintext highlighter-rouge">--kde_inline</code> flag.</li>
+  <li>New feature: ChIP-seq-specific processing routines added: <code class="language-plaintext highlighter-rouge">--remdups</code> removes PCR duplicates, <code class="language-plaintext highlighter-rouge">--unique</code> only maps unique reads.  Enable all of these with <code class="language-plaintext highlighter-rouge">--chipseq</code> (also turns of GATC-level binning, GATC-based read extension and will only output coverage tracks not ratios)</li>
+  <li>New feature: New normalisation method, “rawbins”.  This writes the normalisation data to TSV format and runs a user-provided script for custom normalisation.  Your script should read the data file and output the normalisation factor.  Advanced users only, use with caution.</li>
+  <li>New feature: consider all occupancy as RPM (reads per million mapped reads), set as default.  Control with <code class="language-plaintext highlighter-rouge">--scores_as_rpm</code> flag.</li>
+  <li>Changed: bowtie2 command handling refactored more elegantly</li>
+  <li>Added: ability to add custom flags to bowtie2 command with <code class="language-plaintext highlighter-rouge">--bowtie2_add_flags</code></li>
+  <li>Fixed: small changes to read mapping code for more accurate mapping</li>
+  <li>Changed: filename filters are now turned off by default (use <code class="language-plaintext highlighter-rouge">--no_file_filters=0</code> to turn back on)</li>
+</ul>
+
+<h2 id="v146">v1.4.6</h2>
 <ul>
   <li>New feature: paired-end reads are now handled natively at the fastq level.  Use the –paired flag to enable, and your paired reads should be automagically detected and aligned</li>
   <li>Changed: BAM file format is now used natively without SAM intermediates at all levels (also fixes the recent samtools version handling bug)</li>
