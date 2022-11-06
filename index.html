@@ -1,269 +1,487 @@
 <!doctype html>
-<html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.23.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>damidseq_pipeline by owenjm</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-dark.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/main.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+<!-- begin _includes/seo.html --><title>damidseq_pipeline</title>
+<meta name="description" content="An automated pipeline for processing DamID-seq datasetslatest version: 1.5.3">
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="damidseq_pipeline">
+<meta property="og:title" content="damidseq_pipeline">
+<meta property="og:url" content="https://owenjm.github.io/damidseq_pipeline/">
+
+
+  <meta property="og:description" content="An automated pipeline for processing DamID-seq datasetslatest version: 1.5.3">
+
+
+
+  <meta property="og:image" content="https://owenjm.github.io/damidseq_pipeline/images/header.jpg">
+
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://owenjm.github.io/damidseq_pipeline/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "Owen Marshall",
+      "url": "https://owenjm.github.io/damidseq_pipeline/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/damidseq_pipeline/feed.xml" type="application/atom+xml" rel="alternate" title="damidseq_pipeline Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/damidseq_pipeline/assets/css/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css">
+
+<!--[if IE]>
+  <style>
+    /* old IE unsupported flexbox fixes */
+    .greedy-nav .site-title {
+      padding-right: 3em;
+    }
+    .greedy-nav button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+    }
+  </style>
+<![endif]-->
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
 
   </head>
-  <body>
 
-      <header>
-        <h1>damidseq_pipeline</h1>
-        <p>An automated pipeline for processing DamID sequencing datasets</p>
-      </header>
+  <body class="layout--single">
+    <nav class="skip-links">
+  <h2 class="screen-reader-text">Skip links</h2>
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
 
-      <div id="banner">
-        <span id="logo"></span>
+    <!--[if lt IE 9]>
+<div class="notice--danger align-center" style="margin: 0;">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+<![endif]-->
 
-        <a href="https://github.com/owenjm/damidseq_pipeline" class="button fork"><strong>View On GitHub</strong></a>
-        <div class="downloads">
-          <span>Downloads:</span>
-          <ul>
-            <li><a href="https://github.com/owenjm/damidseq_pipeline/zipball/master" class="button">ZIP</a></li>
-            <li><a href="https://github.com/owenjm/damidseq_pipeline/tarball/master" class="button">TAR</a></li>
-          </ul>
-        </div>
-      </div><!-- end banner -->
+    
 
-    <div class="wrapper">
-      <nav>
-        <ul></ul>
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+        <a class="site-title" href="/damidseq_pipeline/">
+          damidseq_pipeline
+          
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a href="/damidseq_pipeline/index.html">About</a>
+            </li><li class="masthead__menu-item">
+              <a href="/damidseq_pipeline/changelog.html">Recent changes</a>
+            </li><li class="masthead__menu-item">
+              <a href="https://github.com/owenjm/damidseq_pipeline">View on GitHub</a>
+            </li><li class="masthead__menu-item">
+              <a href="https://marshall-lab.org">The Marshall lab</a>
+            </li></ul>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
       </nav>
-      <section>
-        <h1>
-<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span class="octicon octicon-link"></span></a>Introduction</h1>
+    </div>
+  </div>
+</div>
 
-<p>Processing DamID-seq data involves extending single-end reads, aligning the reads to the genome and determining the coverage, similar to processing regular ChIP-seq datasets. However, as DamID data is represented as a log2 ratio of (Dam-fusion/Dam), normalisation of the sample and Dam-only control is necessary and adding pseudocounts to mitigate the effect of background counts is highly recommended.</p>
 
-<p><a href="https://github.com/owenjm/damidseq_pipeline/tarball/master">damidseq_pipeline</a> is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in bedGraph (or optionally GFF) format.</p>
+    <div class="initial-content">
+      
+  
 
-<p>The output ratio files can easily be converted to TDF for viewing in <a href="http://www.broadinstitute.org/software/igv/">IGV</a> using igvtools.  The files can be processed for peak calling using <a href="http://github.com/owenjm/find_peaks">find_peaks</a> or, if using RNA pol II DamID, transcribed genes can be determined using <a href="http://github.com/owenjm/polii.gene.call">polii.gene.call</a>.</p>
 
-<h2>
-<a id="citation" class="anchor" href="#citation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Citation</h2>
+
+
+
+
+
+<div class="page__hero--overlay"
+  style=" background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/damidseq_pipeline/images/header.jpg');"
+>
+  
+    <div class="wrapper">
+      <h1 id="page-title" class="page__title" itemprop="headline">
+        
+          damidseq_pipeline
+
+        
+      </h1>
+      
+        <p class="page__lead">An automated pipeline for processing DamID-seq datasets<br /><small>latest version: 1.5.3</small>
+</p>
+      
+      
+
+
+      
+      
+        <p>
+        
+          <a href="https://github.com/owenjm/damidseq_pipeline/releases" class="btn btn--light-outline btn--large">Download</a>
+        
+      
+    </div>
+  
+  
+</div>
+
+
+
+
+
+<div id="main" role="main">
+  
+
+
+  <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
+    
+    <meta itemprop="description" content="An automated pipeline for processing DamID-seq datasetslatest version: 1.5.3">
+    
+    
+
+    <div class="page__inner-wrap">
+      
+
+      <section class="page__content" itemprop="text">
+        
+          <aside class="sidebar__right sticky">
+            <nav class="toc">
+              <header><h4 class="nav__title"><i class="fas fa-file-alt"></i> Contents</h4></header>
+              <ul class="toc__menu"><li><a href="#introduction">Introduction</a><ul><li><a href="#features">Features</a></li><li><a href="#citation">Citation</a></li></ul></li><li><a href="#download-and-installation">Download and installation</a><ul><li><a href="#requirements">Requirements</a></li><li><a href="#installation">Installation</a></li><li><a href="#initial-setup">Initial setup</a></li></ul></li><li><a href="#using-damidseq_pipeline">Using damidseq_pipeline</a><ul><li><a href="#sample-names">Sample names</a></li><li><a href="#paired-end-sequencing-files">Paired-end sequencing files</a></li><li><a href="#processing-chip-seq-data">Processing ChIP-seq data</a></li><li><a href="#other-options">Other options</a></li><li><a href="#saving-default-option-values">Saving default option values</a></li><li><a href="#working-with-multiple-genomes">Working with multiple genomes</a></li><li><a href="#example-dataset">Example dataset</a></li></ul></li><li><a href="#output-and-downstream-data-processing">Output and downstream data processing</a><ul><li><a href="#visualising-the-dna-binding-profiles">Visualising the DNA binding profiles</a></li><li><a href="#calling-significant-peaks-from-the-data">Calling significant peaks from the data</a></li><li><a href="#calling-transcribed-genes-from-rna-pol-ii-datasets">Calling transcribed genes from RNA pol II datasets</a></li><li><a href="#other-useful-scripts-and-utilities">Other useful scripts and utilities</a></li></ul></li></ul></li></ul>
+
+            </nav>
+          </aside>
+        
+        <h1 id="introduction">Introduction</h1>
+
+<p><a href="https://github.com/owenjm/damidseq_pipeline/releases">damidseq_pipeline</a> is a single script that automatically handles sequence alignment, read extension, binned counts, normalisation, pseudocount addition and final ratio file generation. The script uses FASTQ or BAM files as input, and outputs the final log2 ratio files in bedGraph format.</p>
+
+<h2 id="features">Features</h2>
+<ul>
+  <li>Fully automated processing of NGS DamID-seq datasets, from FASTQ input to bedGraph output</li>
+  <li>Handles both single- and paired-end datasets</li>
+  <li>Can be used with either FASTQ or pre-aligned BAM input files</li>
+  <li>Multiple methods of normalisation provided</li>
+  <li>As of v1.5.3 and greater, can also handle and process ChIP-seq NGS data</li>
+</ul>
+
+<h2 id="citation">Citation</h2>
 
 <p>If you find this software useful, please cite:</p>
 
-<p>Marshall OJ and Brand AH. (2015) damidseq_pipeline: an automated pipeline for processing DamID sequencing datasets. <em>Bioinformatics.</em> Oct 15;31(20):3371-3.  doi: 10.1093/bioinformatics/btv386. (<a href="http://www.ncbi.nlm.nih.gov/pubmed/26112292">pubmed</a>; <a href="http://bioinformatics.oxfordjournals.org/content/early/2015/07/13/bioinformatics.btv386.long">full text, open access</a>)</p>
+<p>Marshall OJ and Brand AH. (2015) damidseq_pipeline: an automated pipeline for processing DamID sequencing datasets. <em>Bioinformatics.</em> 31(20): 3371–3.
+(<a href="http://www.ncbi.nlm.nih.gov/pubmed/26112292">pubmed</a>; <a href="https://academic.oup.com/bioinformatics/article/31/20/3371/196153">full text, open access</a>)</p>
 
-<h1>
-<a id="download" class="anchor" href="#download" aria-hidden="true"><span class="octicon octicon-link"></span></a>Download</h1>
+<h1 id="download-and-installation">Download and installation</h1>
 
-<p><strong>Important: if using a version of the pipeline less than v1.3, please update as older versions did not correctly account for reads on the minus strand during read extension.</strong>  The difference in the final output files is minimal (the Spearman's correlation between files generated with v1.2.6 or less or v1.3 is &gt;0.95) but files generated by the new method should be more accurate.</p>
-
-<p>Download the latest version of the pipeline script and associated files:</p>
-
-<ul>
-<li><a href="https://github.com/owenjm/damidseq_pipeline/tarball/master">As a tarball</a></li>
-<li><a href="https://github.com/owenjm/damidseq_pipeline/zipball/master">As a zipfile</a></li>
-</ul>
+<p><a href="https://github.com/owenjm/damidseq_pipeline/releases">Download the latest version</a> of the pipeline script and associated files.</p>
 
 <p>Prebuilt GATC fragment files used by the script are available for the following genomes:</p>
-
 <ul>
-<li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz"><em>Drosophila melanogaster</em> r5.57</a></li>
-<li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_BDGP6.GATC.gff.gz"><em>D. melanogaster</em> r6</a></li>
-<li>
-<a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/MmGRCm38.GATC.gff.gz"><em>Mus musculus</em> GRCm38</a> or</li>
-<li>
-<a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/HsGRCh38.GATC.gff.gz">Human GRCh38</a>.</li>
+  <li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz"><em>Drosophila melanogaster</em> r5.57</a></li>
+  <li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_BDGP6.GATC.gff.gz"><em>D. melanogaster</em> r6</a></li>
+  <li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/MmGRCm38.GATC.gff.gz"><em>Mus musculus</em> GRCm38</a> or</li>
+  <li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/HsGRCh38.GATC.gff.gz">Human GRCh38</a>.</li>
 </ul>
 
-<h1>
-<a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements</h1>
+<h2 id="requirements">Requirements</h2>
 
 <ul>
-<li>
-<a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a> v2.1 or above (and appropriate genome indices -- see below) (not required if using pre-aligned BAM files)</li>
-<li>
-<a href="http://samtools.sourceforge.net">SAMtools</a> v0.1.9 or above</li>
-<li>a GFF file containing all GATC sites in the genome (a file for the Drosophila genome is provided in the script .zip archive)</li>
-<li>a *nix operating system (e.g. linux, Mac OSX) with Perl v5.10 or greater installed. We recommend using Ubuntu Linux in a virtual machine if using Windows.</li>
-<li>Sequencing data in FASTQ or BAM format</li>
+  <li><a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a> v2.1 or above (and appropriate genome indices – see below) (not required if using pre-aligned BAM files)</li>
+  <li><a href="http://samtools.sourceforge.net">SAMtools</a> v0.1.9 or above</li>
+  <li>a GFF file containing all GATC sites in the genome (a file for the Drosophila genome is provided in the script .zip archive)</li>
+  <li>a *nix operating system (e.g. linux, Mac OSX) with Perl v5.10 or greater installed. We recommend using Ubuntu Linux in a virtual machine if using Windows.</li>
+  <li>Sequencing data in FASTQ or BAM format</li>
 </ul>
 
-<h1>
-<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation</h1>
+<h2 id="installation">Installation</h2>
 
 <ol>
-<li>Extract the pipeline script archive, make the damid_pipeline file executable and place it in your path</li>
-<li>Install <a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a>
-</li>
-<li>
-<p>Obtain Bowtie 2 indices provided by <a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a> or <a href="http://support.illumina.com/sequencing/sequencing_software/igenome.html">Illumina's iGenome</a></p>
+  <li>Extract the pipeline script archive, make the damid_pipeline file executable and place it in your path</li>
+  <li>Install <a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a></li>
+  <li>
+    <p>Obtain Bowtie 2 indices provided by <a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie 2</a> or <a href="http://support.illumina.com/sequencing/sequencing_software/igenome.html">Illumina’s iGenome</a></p>
 
-<p>Alternatively, build the Bowtie 2 index files manually:</p>
+    <p>Alternatively, build the Bowtie 2 index files manually:</p>
+    <ol>
+      <li>
+        <p>Download the latest FASTA genome primary_assembly (or toplevel) file from <a href="http://ftp.ensembl.org/pub/current_fasta/">Ensembl</a>
+ e.g. <a href="http://ftp.ensembl.org/pub/current_fasta/mus_musculus/dna/">the current release for <em>Mus musculus</em></a></p>
 
-<ol>
-<li>
-<p>Download the latest FASTA genome primary_assembly (or toplevel) file from <a href="http://ftp.ensembl.org/pub/current_fasta/">Ensembl</a>
-e.g. <a href="http://ftp.ensembl.org/pub/current_fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.primary_assembly.fa.gz">the current release for <em>Mus musculus</em></a></p>
+        <p>(alternatively, for <em>Drosophila</em>, download from <a href="ftp://ftp.flybase.net/releases/current/">the Flybase FTP site</a></p>
+      </li>
+      <li>Extract the .gz file</li>
+      <li>
+        <p>Run bowtie2-build in the directory containing the extracted .fasta file. For the examples above:</p>
 
-<p>(alternatively, for <em>Drosophila</em>, download from the Flybase FTP site (ftp://ftp.flybase.net/releases/current/)
- e.g. ftp://ftp.flybase.net/releases/FB2014_03/dmel_r5.57/fasta/dmel-all-chromosome-r5.57.fasta.gz )</p>
-</li>
-<li>Extract the .gz file</li>
-<li>
-<p>Run bowtie2-build in the directory containing the extracted .fasta file. For the examples above:</p>
+        <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> bowtie2-build Mus_musculus.GRCm38.dna.primary_assembly.fa GRCm38
+ bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
+</code></pre></div>        </div>
+      </li>
+    </ol>
+  </li>
+  <li>Install <a href="http://samtools.sourceforge.net">SAMtools</a></li>
+  <li>Download a pre-built GATC fragment file for
+    <ul>
+      <li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz"><em>D. melanogaster</em> r5.57</a></li>
+      <li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_BDGP6.GATC.gff.gz"><em>D. melanogaster</em> r6</a></li>
+      <li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/MmGRCm38.GATC.gff.gz"><em>Mus musculus</em> GRCm38</a> or</li>
+      <li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/HsGRCh38.GATC.gff.gz">Human GRCh38</a>.</li>
+    </ul>
 
-<pre><code>bowtie2-build Mus_musculus.GRCm38.dna.primary_assembly.fa GRCm38
-bowtie2-build dmel-all-chromosome-r5.57.fasta dmel_r5.57
-</code></pre>
-</li>
-</ol>
-</li>
-<li>Install <a href="http://samtools.sourceforge.net">SAMtools</a>
-</li>
-<li>
-<p>Download a pre-built GATC fragment file for</p>
+    <p>Alternatively build your own:</p>
 
-<ul>
-<li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_r5.57.GATC.gff.gz"><em>D. melanogaster</em> r5.57</a></li>
-<li><a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/Dmel_BDGP6.GATC.gff.gz"><em>D. melanogaster</em> r6</a></li>
-<li>
-<a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/MmGRCm38.GATC.gff.gz"><em>Mus musculus</em> GRCm38</a> or</li>
-<li>
-<a href="https://github.com/owenjm/damidseq_pipeline/raw/gh-pages/pipeline_gatc_files/HsGRCh38.GATC.gff.gz">Human GRCh38</a>.</li>
-</ul>
+    <ol>
+      <li>Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)</li>
+      <li>
+        <p>Run the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true">gatc.track.maker.pl</a> script on the fasta sequence, e.g.:</p>
 
-<p>Alternatively build your own:</p>
-
-<ol>
-<li>Download the FASTA genome sequence, as in step 3 above (no need to extract the gzipped files)</li>
-<li>
-<p>Run the provided <a href="http://github.com/owenjm/damid_pipeline/blob/master/gatc.track.maker.pl?raw=true">gatc.track.maker.pl</a> script on the fasta sequence, e.g.:</p>
-
-<pre><code>perl gatc.track.maker.pl --name=dmel_r5.57 dmel-all-chromosome-r5.57.fasta
-</code></pre>
-</li>
-</ol>
-</li>
+        <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> perl gatc.track.maker.pl --name=dmel_r5.57 dmel-all-chromosome-r5.57.fasta
+</code></pre></div>        </div>
+      </li>
+    </ol>
+  </li>
 </ol>
 
-<h2>
-<a id="running-the-script-the-first-time" class="anchor" href="#running-the-script-the-first-time" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running the script the first time</h2>
+<h2 id="initial-setup">Initial setup</h2>
 
-<p>In order to run correctly, the script needs to know the locations of two paths, specified using the following command-line options:</p>
+<p>In order to run correctly, damidseq_pipeline needs to know the locations of two paths, specified using the following command-line options (it will prompt you for these if you fail to specify them):</p>
 
 <ol>
-<li>
-<p>The directory and basename of the bowtie2 index files (obtained or built in step 3 above)
-(specified with the --bowtie2_genome_dir option)
-    e.g. in the example above, use</p>
+  <li>
+    <p>The directory and basename of the bowtie2 index files (obtained or built in step 3 above)
+ (specified with the <code class="language-plaintext highlighter-rouge">--bowtie2_genome_dir</code> option)
+     e.g. in the example above, use</p>
 
-<pre><code>--bowtie2_genome_dir=[path_to_.bt2_files]/dmel_r5.57
-</code></pre>
-</li>
-<li>The GATC fragment .gff file (downloaded from the pre-built files listed in step 5, or built following the instructions above)
-(specified with the --gatc_frag_file option)</li>
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> --bowtie2_genome_dir=[path_to_.bt2_files]/dmel_r5.57
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p>The GATC fragment .gff file (downloaded from the pre-built files listed in step 5, or built following the instructions above)
+ (specified with the <code class="language-plaintext highlighter-rouge">--gatc_frag_file</code> option)</p>
+  </li>
 </ol>
 
 <p>In order to setup the pipeline to process the <em>D. melanogaster</em> genome, for example, the first-run command would be:</p>
 
-<pre><code>damidseq_pipeline --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
-</code></pre>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>damidseq_pipeline --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
+</code></pre></div></div>
 
-<p>If these paths do not already exist and the script is run with these options and correct values, the paths will be saved for all future runs unless overridden on the command-line.</p>
+<p class="notice--info">Once run once with these options and correct values, the paths will be saved for all future runs unless overridden on the command-line. <strong>You do not need to specify these options each time</strong></p>
 
-<p>(To clear all user-saved values, run the script with the --reset_defaults option.)</p>
+<p>(To clear all user-saved values, including these values, run with the <code class="language-plaintext highlighter-rouge">--reset_defaults</code> option.)</p>
 
-<h1>
-<a id="running-the-script" class="anchor" href="#running-the-script" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running the script</h1>
+<h1 id="using-damidseq_pipeline">Using damidseq_pipeline</h1>
 
-<p>Run the script in a directory with sequencing files in FASTQ or BAM format.  The default behaviour is to process all files in FASTQ format, and if none are found, all files in BAM format.  Alternatively, individual files may be specified on the command line if the user does not wish to process all available files present in the directory (for example, if the sequencing lane contained multiple replicates).</p>
+<p>Run damidseq_pipeline in a directory containing sequencing files in FASTQ or BAM format.  The default behaviour is to process all files in FASTQ format, and if none are found, all files in BAM format.</p>
 
-<p>The script will by default determine sample names from the file names, and expects a single filename to start with "Dam" in order to automatically assign the Dam-only control.</p>
+<p>Alternatively, individual files may be specified on the command line if the user does not wish to process all available files present in the directory (for example, if the sequencing lane contained multiple replicates).</p>
 
-<p>To see all available options, run the script with --help command-line option:</p>
+<h2 id="sample-names">Sample names</h2>
+<p>Sample names are assigned from filenames.  If a single filename being processed begins with “Dam”, this will be assigned as the Dam-only control.</p>
 
-<pre><code>damidseq_pipeline --help
-</code></pre>
+<p>If no sample filename, or multiple filenames, begin with “Dam”, use <code class="language-plaintext highlighter-rouge">--dam=[filename]</code> to specify the Dam-only control sample manually.  If a Dam-only control cannot be automatically determined, damidseq_pipeline will exit and prompt you to specify one.</p>
 
-<p>This will give you a list of adjustable parameters and their default and current values if applicable. We recommend keeping these at the default value in most cases; however, these can be modified on the command-line with --option=value (no spaces).</p>
+<h2 id="paired-end-sequencing-files">Paired-end sequencing files</h2>
+<p>To process paired-end FASTQ files, use the <code class="language-plaintext highlighter-rouge">--paired</code> option and the pipeline will search for, and match, paired reads.</p>
 
-<p>To save modified values for all future runs, run the script with the parameter you wish to change together with the --save_defaults command-line option:</p>
+<p>BAM files generated from paired-end data are automatically detected and processed, without requiring this option.</p>
 
-<pre><code>damidseq_pipeline --save_defaults
-</code></pre>
+<h2 id="processing-chip-seq-data">Processing ChIP-seq data</h2>
+<p>As of v1.5.3, damidseq_pipeline can also handle ChIP-seq data via the <code class="language-plaintext highlighter-rouge">--chipseq</code> flag.  This option will remove PCR duplicate reads, only process uniquely mapping reads, and output binned coverage tracks in RPM (reads per million mapped reads).</p>
+
+<p class="notice--warning">Warning – do not use this option with DamID-seq data.  DamID-seq is all about the PCR duplicates!</p>
+
+<h2 id="other-options">Other options</h2>
+<p>To see all available options, run the script with <code class="language-plaintext highlighter-rouge">--help</code> command-line option:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>damidseq_pipeline --help
+</code></pre></div></div>
+
+<p>This will give you a list of adjustable parameters and their default and current values if applicable. We recommend keeping these at the default value in most cases; however, these can be modified on the command-line with <code class="language-plaintext highlighter-rouge">--option=value</code> (no spaces).</p>
+
+<h2 id="saving-default-option-values">Saving default option values</h2>
+<p>To save modified values for all future runs, run the script with the parameter you wish to change together with the <code class="language-plaintext highlighter-rouge">--save_defaults</code> command-line option:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>damidseq_pipeline --save_defaults
+</code></pre></div></div>
 
 <p>If bowtie2 and samtools are not in your path, you can specify these on the command-line also.</p>
 
-<h2>
-<a id="output-and-downstream-data-processing" class="anchor" href="#output-and-downstream-data-processing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Output and downstream data processing</h2>
+<h2 id="working-with-multiple-genomes">Working with multiple genomes</h2>
 
-<p>The final output will be a single ratio file: Sample-vs-DAM.gatc.bedgraph. The .gatc.bedgraph file represents the data at GATC fragment resolution (based on the reference genome) and should be used for all subsequent analysis.</p>
+<p>If the user expects to process data from multiple genomes, separate genome specifications can be saved by using the <code class="language-plaintext highlighter-rouge">--save_defaults=[name]</code> along with the <code class="language-plaintext highlighter-rouge">--bowtie2_genome_dir</code> and <code class="language-plaintext highlighter-rouge">--gatc_frag_file</code> options (and any other custom options that the user wishes to set as default for this genome, e.g. the bin width).  For e.g.:</p>
 
-<p>The <a href="http://genome.ucsc.edu/goldenpath/help/bedgraph.html">bedGraph format</a> is used by default.  The pipeline script can output the final ratio files in <a href="http://www.ensembl.org/info/website/upload/gff.html">GFF format</a> instead if the --output_format=gff command-line switch is used.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>damidseq_pipeline --save_defaults=fly --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
+damidseq_pipeline --save_defaults=mouse --bins=500 --gatc_frag_file=path/to/MmGRCm38.GATC.gff.gz --bowtie2_genome_dir=path/to/Mm_GRCm38/GRCm38
+</code></pre></div></div>
 
-<h3>
-<a id="visualising-the-dna-binding-profiles" class="anchor" href="#visualising-the-dna-binding-profiles" aria-hidden="true"><span class="octicon octicon-link"></span></a>Visualising the DNA binding profiles</h3>
+<p>Once set up, different genome definitions can be quickly loaded using the –load_defaults=[name] option, e.g.:</p>
 
-<p>The bedgraph output file can be can be converted to .tdf format via igvtools, either using the graphical interface provided by <a href="http://www.broadinstitute.org/software/igv/">IGV</a> or via the command-line.  A legacy <a href="http://github.com/owenjm/damid_pipeline/blob/master/gff2tdf.pl?raw=true">gff2tdf.pl</a> script is also provided for converting GFF files (the default output file format prior to v1.4) to TDF.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>damidseq_pipeline --load_defaults=fly
+</code></pre></div></div>
 
-<h3>
-<a id="calling-significant-peaks-from-the-data" class="anchor" href="#calling-significant-peaks-from-the-data" aria-hidden="true"><span class="octicon octicon-link"></span></a>Calling significant peaks from the data</h3>
+<p>All currently saved genome definitions can be listed using –load_defaults=list.</p>
+
+<h2 id="example-dataset">Example dataset</h2>
+
+<p>An example set of two small (3000 reads each) fastq.gz files and an index.txt file are provided in the zip archive (as “example.zip”), or you can <a href="http://github.com/owenjm/damid_pipeline/blob/master/example.zip?raw=true">download these separately</a>. Running the pipeline script on these files should successfully produce a polII-vs-Dam.gatc.bedgraph ratio file as output.</p>
+
+<h1 id="output-and-downstream-data-processing">Output and downstream data processing</h1>
+
+<p>The final output will be a single ratio file: Sample-vs-Dam.gatc.bedgraph. The .gatc.bedgraph file represents the data at GATC fragment resolution (based on the reference genome) and should be used for all subsequent analysis.</p>
+
+<p>The <a href="http://genome.ucsc.edu/goldenpath/help/bedgraph.html">bedGraph format</a> is used by default.  The pipeline script can output the final ratio files in <a href="http://www.ensembl.org/info/website/upload/gff.html">GFF format</a> instead if the <code class="language-plaintext highlighter-rouge">--output_format=gff</code> command-line switch is used.</p>
+
+<h3 id="visualising-the-dna-binding-profiles">Visualising the DNA binding profiles</h3>
+
+<p>The bedgraph output files can be can viewed directly in genome browsers such as <a href="http://www.broadinstitute.org/software/igv/">IGV</a>.  For publication-quality figures, we recommend <a href="https://pygenometracks.readthedocs.io/">pyGenomeTracks</a>.</p>
+
+<h3 id="calling-significant-peaks-from-the-data">Calling significant peaks from the data</h3>
 
 <p>The <a href="http://github.com/owenjm/find_peaks">find_peaks</a> software will process the output .gatc.bedgraph ratio file and call significant peaks present in the dataset.  Please see the find_peaks page for more details.</p>
 
-<h3>
-<a id="calling-transcribed-genes-from-rna-pol-ii-datasets" class="anchor" href="#calling-transcribed-genes-from-rna-pol-ii-datasets" aria-hidden="true"><span class="octicon octicon-link"></span></a>Calling transcribed genes from RNA pol II datasets</h3>
+<h3 id="calling-transcribed-genes-from-rna-pol-ii-datasets">Calling transcribed genes from RNA pol II datasets</h3>
 
 <p>The <a href="http://github.com/owenjm/polii.gene.call">polii.gene.call</a> Rscript will call transcribed genes (i.e. gene bodies with significantly enriched pol II occupancy) from the output .gatc.bedgraph file.  Please see the polii.gene.call page for more details.</p>
 
-<h3>
-<a id="other-useful-scripts-and-utilities" class="anchor" href="#other-useful-scripts-and-utilities" aria-hidden="true"><span class="octicon octicon-link"></span></a>Other useful scripts and utilities</h3>
+<h3 id="other-useful-scripts-and-utilities">Other useful scripts and utilities</h3>
 
-<p>A collection of useful R and Perl scripts for comparing and analysing DamID-seq data is maintained at [<a href="http://github.com/owenjm/damid_misc">http://github.com/owenjm/damid_misc</a>].</p>
+<p>A collection of useful R and Perl scripts for comparing and analysing DamID-seq data <a href="http://github.com/owenjm/damid_misc">is maintained here</a>.</p>
 
-<h2>
-<a id="working-with-multiple-genomes" class="anchor" href="#working-with-multiple-genomes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Working with multiple genomes</h2>
-
-<p>If the user expects to process data from multiple genomes, separate genome specifications can be saved by using the --save_defaults=[name] along with the --bowtie2_genome_dir and --gatc_frag_file options (and any other custom options that the user wishes to set as default for this genome, e.g. the bin width).  For e.g.:</p>
-
-<pre><code>damidseq_pipeline --save_defaults=fly --gatc_frag_file=path/to/Dmel_r5.57.GATC.gff.gz --bowtie2_genome_dir=path/to/dmel_r5.57/dmel_r.5.57
-damidseq_pipeline --save_defaults=mouse --bins=500 --gatc_frag_file=path/to/MmGRCm38.GATC.gff.gz --bowtie2_genome_dir=path/to/Mm_GRCm38/GRCm38
-</code></pre>
-
-<p>Once set up, different genome definitions can be quickly loaded using the --load_defaults=[name] option, e.g.:</p>
-
-<pre><code>damidseq_pipeline --load_defaults=fly
-</code></pre>
-
-<p>All currently saved genome definitions can be listed using --load_defaults=list.</p>
-
-<h2>
-<a id="processing-fastq-files-with-adaptor-codes" class="anchor" href="#processing-fastq-files-with-adaptor-codes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Processing FASTQ files with adaptor codes</h2>
-
-<p>The damidseq_pipeline will attempt to automatically determine the sample name from the filenames provided.  </p>
-
-<p>Some sequencing facilities, however, may provide only adaptor index IDs rather than sample names.  If sequencing filenames are provided with index IDs rather than names, a file "index.txt" in the working directory can be provided with the format of [index] [sample_name], eg:</p>
-
-<pre><code>A6 Dam
-A12 polII 
-</code></pre>
-
-<p>where A6 is the sequencing adaptor index. The sample name cannot contain spaces and there has to be one (and only one) sample called "Dam"; the adaptor index must to be referenced in the fastq filename (e.g. for "A6", either "Index6" or "A006" are expected in the filename). Please see the <a href="http://github.com/owenjm/damid_pipeline/blob/master/example.zip?raw=true">provided example</a> for an illustration of the index.txt file format and matching file names.</p>
-
-<h2>
-<a id="example-dataset" class="anchor" href="#example-dataset" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example dataset</h2>
-
-<p>An example set of two small (3000 reads each) fastq.gz files and an index.txt file are provided in the zip archive (as "example.zip"), or you can <a href="http://github.com/owenjm/damid_pipeline/blob/master/example.zip?raw=true">download these separately</a>. Running the pipeline script on these files should successfully produce a polII-vs-Dam.gatc.bedgraph ratio file as output.</p>
+        
       </section>
+
+      <footer class="page__meta">
+        
+        
+
+
+        
+
+
+      </footer>
+
+      
+
+      
+    </div>
+
+    
+  </article>
+
+  
+  
+</div>
+
+    </div>
+
+    
+
+    <div id="footer" class="page__footer">
       <footer>
-        <p>Project maintained by <a href="https://github.com/owenjm">owenjm</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+
+    
+      
+        
+          <li><a href="https://twitter.com/OMarshall_lab" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-twitter-square" aria-hidden="true"></i> Twitter</a></li>
+        
+      
+        
+          <li><a href="https://github.com/owenjm" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+    
+
+    
+      <li><a href="/damidseq_pipeline/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2022 Owen Marshall. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
       </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+
     
+  <script src="/damidseq_pipeline/assets/js/main.min.js"></script>
+
+
+
+
+
+
+
+
+
+
   </body>
 </html>

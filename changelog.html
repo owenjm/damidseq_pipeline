@@ -1,0 +1,394 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.23.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>damidseq_pipeline</title>
+<meta name="description" content="An automated pipeline for processing DamID-seq datasetslatest version: 1.5.3">
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="damidseq_pipeline">
+<meta property="og:title" content="damidseq_pipeline">
+<meta property="og:url" content="https://owenjm.github.io/damidseq_pipeline/changelog.html">
+
+
+  <meta property="og:description" content="An automated pipeline for processing DamID-seq datasetslatest version: 1.5.3">
+
+
+
+  <meta property="og:image" content="https://owenjm.github.io/damidseq_pipeline/images/header.jpg">
+
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://owenjm.github.io/damidseq_pipeline/changelog.html">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "Owen Marshall",
+      "url": "https://owenjm.github.io/damidseq_pipeline/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/damidseq_pipeline/feed.xml" type="application/atom+xml" rel="alternate" title="damidseq_pipeline Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/damidseq_pipeline/assets/css/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css">
+
+<!--[if IE]>
+  <style>
+    /* old IE unsupported flexbox fixes */
+    .greedy-nav .site-title {
+      padding-right: 3em;
+    }
+    .greedy-nav button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+    }
+  </style>
+<![endif]-->
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--single">
+    <nav class="skip-links">
+  <h2 class="screen-reader-text">Skip links</h2>
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    <!--[if lt IE 9]>
+<div class="notice--danger align-center" style="margin: 0;">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+<![endif]-->
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+        <a class="site-title" href="/damidseq_pipeline/">
+          damidseq_pipeline
+          
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a href="/damidseq_pipeline/index.html">About</a>
+            </li><li class="masthead__menu-item">
+              <a href="/damidseq_pipeline/changelog.html">Recent changes</a>
+            </li><li class="masthead__menu-item">
+              <a href="https://github.com/owenjm/damidseq_pipeline">View on GitHub</a>
+            </li><li class="masthead__menu-item">
+              <a href="https://marshall-lab.org">The Marshall lab</a>
+            </li></ul>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+  
+
+
+
+
+
+
+
+<div class="page__hero--overlay"
+  style=" background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/damidseq_pipeline/images/header.jpg');"
+>
+  
+    <div class="wrapper">
+      <h1 id="page-title" class="page__title" itemprop="headline">
+        
+          damidseq_pipeline
+
+        
+      </h1>
+      
+        <p class="page__lead">An automated pipeline for processing DamID-seq datasets<br /><small>latest version: 1.5.3</small>
+</p>
+      
+      
+
+
+      
+      
+        <p>
+        
+          <a href="https://github.com/owenjm/damidseq_pipeline/releases" class="btn btn--light-outline btn--large">Download</a>
+        
+      
+    </div>
+  
+  
+</div>
+
+
+
+
+
+<div id="main" role="main">
+  
+
+
+  <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
+    
+    <meta itemprop="description" content="An automated pipeline for processing DamID-seq datasetslatest version: 1.5.3">
+    
+    
+
+    <div class="page__inner-wrap">
+      
+
+      <section class="page__content" itemprop="text">
+        
+        <h2 id="v146">v1.4.6</h2>
+<ul>
+  <li>New feature: paired-end reads are now handled natively at the fastq level.  Use the –paired flag to enable, and your paired reads should be automagically detected and aligned</li>
+  <li>Changed: BAM file format is now used natively without SAM intermediates at all levels (also fixes the recent samtools version handling bug)</li>
+  <li>Changed: paired-end reads are selected based on the 0x2 bit on the SAM file format bitwise FLAG (reads aligned in proper pair)</li>
+  <li>Fixed: paired-end read counts are enumerated correctly</li>
+  <li>Removed: –keep_sam and –only_sam flags (as SAM format is no longer used)</li>
+  <li>Added: –keep_original_bams flag to retain the non-extended reads BAM file when using single-end sequencing</li>
+  <li>Changed: warning on missing chromosomal identities in GATC alignment made more friendly and less confusing</li>
+</ul>
+
+<h2 id="v145">v1.4.5</h2>
+<ul>
+  <li>Added –ps_debug option to explicitly display pseudocounts calculation</li>
+</ul>
+
+<h2 id="v144">v1.4.4</h2>
+<ul>
+  <li>Fixed issue with some externally-generated BAM files</li>
+</ul>
+
+<h2 id="v143">v1.4.3</h2>
+<ul>
+  <li>Better handling of chromosome names</li>
+</ul>
+
+<h2 id="v142">v1.4.2</h2>
+<ul>
+  <li>Small improvements to SAM file handling</li>
+</ul>
+
+<h2 id="v141">v1.4.1</h2>
+<ul>
+  <li>Fixed issues with samtools v1.3 (this version of samtools introduced backwards incompatibilities when using the ‘sort’ function.  damidseq_pipeline now checks for the version number and should support all versions of samtools.)</li>
+</ul>
+
+<h2 id="v14">v1.4</h2>
+<ul>
+  <li>New read-extension method: by default, reads are now only extended as far as the next GATC fragment.  Use –extension_method=full to disable this feature and extend every read by the value of –len.</li>
+  <li>Output format is now bedgraph by default.  Use –output_format=gff to restore the previous default.  Changing the default to bedgraph allows users to create TDF tracks directly within the graphical IGV tools, making it easier for end users.</li>
+  <li>Minor code cleanups</li>
+</ul>
+
+<h2 id="v13">v1.3</h2>
+<ul>
+  <li>Major bugfix: reads from the minus strand were not being extended correctly during processing.  The overall impact is minor (correlation between old and new read extension methods is &gt;0.95) but this new method is technically more accurate.</li>
+  <li>added –keep_sam (do not delete the temporary SAM file) option</li>
+  <li>added –only_sam (do not generate BAM files) option (both options are intended for debug purposes only)</li>
+</ul>
+
+<h2 id="v127">v1.2.7</h2>
+<ul>
+  <li>New opition –no_file_filters to prevent any filename trimming/filtering (by default input filenames are trimmed to the first underscore)</li>
+  <li>Small filename issue fixes</li>
+</ul>
+
+<h2 id="v126">v1.2.6</h2>
+<ul>
+  <li>Now uses File::Basename to handle filenames</li>
+  <li>Fixed/cleaned up a number of rare problems with filename handling</li>
+</ul>
+
+<h2 id="v125">v1.2.5</h2>
+<ul>
+  <li>Added –dam and –out_name options.  Use these to set the Dam-only control sample and/or a custom output name</li>
+  <li>Added more sanity checks</li>
+  <li>Minor bugfixes</li>
+</ul>
+
+<h2 id="v124">v1.2.4</h2>
+<ul>
+  <li>Added explicit checks for bowtie2 and samtools executables, and for bowtie2 output</li>
+</ul>
+
+<h2 id="v123">v1.2.3</h2>
+<ul>
+  <li>Fixed a serious error in RPM normalisation calculations (values were inverted) – please re-run on your samples if you have used this method on them</li>
+  <li>Minor code cleanups</li>
+</ul>
+
+<h2 id="v121">v1.2.1</h2>
+<ul>
+  <li>Added ability to process BAM files generated from paired-end sequencing</li>
+  <li>Cleaner reporting of missing assembly fragments in GATC files</li>
+  <li>Some small bugs fixed</li>
+  <li>General code clean-ups</li>
+</ul>
+
+<h2 id="v12">v1.2</h2>
+<ul>
+  <li>Completely re-written normalisation routine based on kernel density estimation</li>
+  <li>Genomic coverage is now calculated internally rather than using bedtools (uses much less memory, is slightly faster, and drops the requirement for an external binned windows file)</li>
+  <li>Binned window files are no longer required (bins are calculated automatically using the sequence information provided in the BAM headers, and the bin size specified by the –bins command-line option)</li>
+  <li>Better handling of GATC fragment files (should prevent hangs/pauses when creating GATC fragment arrays)</li>
+  <li>Memory optimisation for large files (greatly reduces usage for processing mouse/human data)</li>
+  <li>Added ability to process BAM files directly</li>
+  <li>Much better file-handling all round (now takes sample names directly from filenames by default; the option to use an index.txt file remains but is essentially deprecated)</li>
+  <li>New option: –norm_method=## kde/rpm  “kde” is the default method using kernel density estimation; “rpm” normalises solely on readcounts/million reads only (the “rpm” method is not recommended except for the very rare cases in which a Dam-fusion protein fails to methylate accessible genomic regions, making kde normalisation is inappropriate)</li>
+  <li>Re-written –help output rountines (better formatted and more informative)</li>
+  <li>Ability to read gzipped GATC files</li>
+  <li>Ability to save sets of defaults to enable quick switching between different genomes  (use –save_defaults=## name; use –load_defaults=## name to load; use load_defaults=list to list current available options)</li>
+  <li>New location for config files (in ~/.config/damid_pipeline/).  Existing config file will be migrated automatically</li>
+  <li>Various small bugfixes and code clean-ups</li>
+</ul>
+
+<p>** NB: a number of default parameters have changed with this release.  It is strongly advised to reset all parameters to the default value with –reset_defaults.</p>
+
+<h2 id="v10">v1.0</h2>
+<ul>
+  <li>Initial release</li>
+</ul>
+
+        
+      </section>
+
+      <footer class="page__meta">
+        
+        
+
+
+        
+
+
+      </footer>
+
+      
+
+      
+    </div>
+
+    
+  </article>
+
+  
+  
+</div>
+
+    </div>
+
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+
+    
+      
+        
+          <li><a href="https://twitter.com/OMarshall_lab" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-twitter-square" aria-hidden="true"></i> Twitter</a></li>
+        
+      
+        
+          <li><a href="https://github.com/owenjm" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+    
+
+    
+      <li><a href="/damidseq_pipeline/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2022 Owen Marshall. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/damidseq_pipeline/assets/js/main.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+  </body>
+</html>

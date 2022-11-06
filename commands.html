@@ -1,0 +1,348 @@
+<!doctype html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.23.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+-->
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>damidseq_pipeline</title>
+<meta name="description" content="An automated pipeline for processing DamID-seq datasetslatest version: 1.5.3">
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="damidseq_pipeline">
+<meta property="og:title" content="damidseq_pipeline">
+<meta property="og:url" content="https://owenjm.github.io/damidseq_pipeline/commands.html">
+
+
+  <meta property="og:description" content="An automated pipeline for processing DamID-seq datasetslatest version: 1.5.3">
+
+
+
+  <meta property="og:image" content="https://owenjm.github.io/damidseq_pipeline/images/header.jpg">
+
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://owenjm.github.io/damidseq_pipeline/commands.html">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "Owen Marshall",
+      "url": "https://owenjm.github.io/damidseq_pipeline/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/damidseq_pipeline/feed.xml" type="application/atom+xml" rel="alternate" title="damidseq_pipeline Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/damidseq_pipeline/assets/css/main.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css">
+
+<!--[if IE]>
+  <style>
+    /* old IE unsupported flexbox fixes */
+    .greedy-nav .site-title {
+      padding-right: 3em;
+    }
+    .greedy-nav button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+    }
+  </style>
+<![endif]-->
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--single">
+    <nav class="skip-links">
+  <h2 class="screen-reader-text">Skip links</h2>
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    <!--[if lt IE 9]>
+<div class="notice--danger align-center" style="margin: 0;">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+<![endif]-->
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+        <a class="site-title" href="/damidseq_pipeline/">
+          damidseq_pipeline
+          
+        </a>
+        <ul class="visible-links"><li class="masthead__menu-item">
+              <a href="/damidseq_pipeline/index.html">About</a>
+            </li><li class="masthead__menu-item">
+              <a href="/damidseq_pipeline/changelog.html">Recent changes</a>
+            </li><li class="masthead__menu-item">
+              <a href="https://github.com/owenjm/damidseq_pipeline">View on GitHub</a>
+            </li><li class="masthead__menu-item">
+              <a href="https://marshall-lab.org">The Marshall lab</a>
+            </li></ul>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+  
+
+
+
+
+
+
+
+<div class="page__hero--overlay"
+  style=" background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/damidseq_pipeline/images/header.jpg');"
+>
+  
+    <div class="wrapper">
+      <h1 id="page-title" class="page__title" itemprop="headline">
+        
+          damidseq_pipeline
+
+        
+      </h1>
+      
+        <p class="page__lead">An automated pipeline for processing DamID-seq datasets<br /><small>latest version: 1.5.3</small>
+</p>
+      
+      
+
+
+      
+      
+        <p>
+        
+          <a href="https://github.com/owenjm/damidseq_pipeline/releases" class="btn btn--light-outline btn--large">Download</a>
+        
+      
+    </div>
+  
+  
+</div>
+
+
+
+
+
+<div id="main" role="main">
+  
+
+
+  <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
+    
+    <meta itemprop="description" content="An automated pipeline for processing DamID-seq datasetslatest version: 1.5.3">
+    
+    
+
+    <div class="page__inner-wrap">
+      
+
+      <section class="page__content" itemprop="text">
+        
+        <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> --bamfiles            Only process BAM files
+ --bedtools_path       path to BEDTools executable (leave blank if in path)
+ --bins                Width of bins to use for mapping reads
+                         [Current value: 75]
+ --bowtie              Perform bowtie2 alignment [1/0]
+                         [Current value: 1]
+ --bowtie2_add_flags   Additional flags to use for bowtie2 alignment
+ --bowtie2_genome_dir  Directory and basename for bowtie2 .bt2 indices
+ --bowtie2_path        path to bowtie2 executable (leave blank if in path)
+ --dam                 Specify file to use as Dam control
+ --extend_reads        Perform read extension [1/0]
+                         [Current value: 1]
+ --extension_method    Read extension method to use; options are:
+                         full: Method used by version 1.3 and earlier.  Extends all reads to the value set with --len.
+                         gatc: Default for version 1.4 and above. Extends reads to --len or to the next GATC site, whichever is shorter.  Using this option increases peak resolution.
+                         [Current value: gatc]
+ --full_data_files     Output full binned ratio files (not only GATC array)
+ --gatc_frag_file      GFF file containing all instances of the sequence GATC
+ --just_align          Just align the FASTQ files, generate BAM files, and exit
+ --kde_plot            create an Rplot of the kernel density fit for normalisation (requires R)
+ --keep_original_bams  Keep unextended BAM files if using single-end reads
+ --len                 Length to extend reads to
+                         [Current value: 300]
+ --load_defaults       Load this saved set of defaults
+                         (use 'list' to list current saved options)
+ --max_norm_value      Maximum log2 value to limit normalisation search at (default = +5)
+                         [Current value: 5]
+ --method_subtract     Output values are (Dam_fusion - Dam) instead of log2(Dam_fusion/Dam) (not recommended)
+ --min_norm_value      Minimum log2 value to limit normalisation search at (default = -5)
+                         [Current value: -5]
+ --no_file_filters     Do not trim filenames for output
+                         [Current value: 1]
+ --norm_method         Normalisation method to use; options are:
+                         kde: use kernel density estimation of log2 GATC fragment ratio (default)
+                         rpm: use readcounts per million reads (not recommended for most use cases)
+                         rawbins: new experimental method, may be more accurate
+                         [Current value: kde]
+ --norm_override       Normalise by this amount instead
+ --norm_steps          Number of points in normalisation routine (default = 300)
+                         [Current value: 300]
+ --out_name            Use this as the fusion-protein name when saving the final ratio
+ --output_format       Output tracks in this format [gff/bedgraph]
+                         [Current value: bedgraph]
+ --paired              Process paired-end reads (experimental, use with caution)
+ --ps_debug            Print extra debugging info on pseudocount calculations in log file
+ --ps_factor           Value of c in c*(reads/bins) formula for calculating pseudocounts (default = 10)
+                         [Current value: 10]
+ --pseudocounts        Add this value of psuedocounts instead (default: optimal number of pseudocounts determined algorithmically)
+ --q                   Cutoff average Q score for aligned reads
+                         [Current value: 30]
+ --qscore1max          max decile for normalising from Dam array
+                         [Current value: 1]
+ --qscore1min          min decile for normalising from Dam array
+                         [Current value: 0.4]
+ --qscore2max          max decile for normalising from fusion-protein array
+                         [Current value: 0.9]
+ --reset_defaults      Delete user-defined parameters
+ --samtools_path       path to samtools executable (leave blank if in path)
+ --save_defaults       Save runtime parameters as default
+                         (provide a name to differentiate different genomes -- these can be loaded with 'load_defaults')
+ --threads             threads for bowtie2 to use
+                         [Current value: 7]
+ --write_raw           Write TSV file with raw counts for each Dam, sample pair
+</code></pre></div></div>
+
+
+        
+      </section>
+
+      <footer class="page__meta">
+        
+        
+
+
+        
+
+
+      </footer>
+
+      
+
+      
+    </div>
+
+    
+  </article>
+
+  
+  
+</div>
+
+    </div>
+
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+
+    
+      
+        
+          <li><a href="https://twitter.com/OMarshall_lab" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-twitter-square" aria-hidden="true"></i> Twitter</a></li>
+        
+      
+        
+          <li><a href="https://github.com/owenjm" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+    
+
+    
+      <li><a href="/damidseq_pipeline/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">&copy; 2022 Owen Marshall. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/damidseq_pipeline/assets/js/main.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+  </body>
+</html>
