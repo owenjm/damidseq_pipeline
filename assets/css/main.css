@@ -1,5 +1,6 @@
 /* ========================================================================== Default skin ========================================================================== */
-/*! Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes Licensed under MIT (https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE) */
+/* Copyright comment */
+/*! Minimal Mistakes Jekyll Theme 4.26.2 by Michael Rose Copyright 2013-2024 Michael Rose - mademistakes.com | @mmistakes Free for personal and commercial use under the MIT license https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE */
 /* Variables */
 /* ========================================================================== Variables ========================================================================== */
 /* Typography ========================================================================== */
@@ -272,10 +273,6 @@ a:hover { color: #235e70; outline: 0; }
 tt, code, kbd, samp, pre { font-family: Monaco, Consolas, "Lucida Console", monospace; }
 
 pre { overflow-x: auto; /* add scrollbars to wide code blocks*/ }
-
-p > code, a > code, li > code, figcaption > code, td > code { padding-top: 0.1rem; padding-bottom: 0.1rem; font-size: 0.8em; background: #fafafa; border-radius: 4px; }
-
-p > code:before, p > code:after, a > code:before, a > code:after, li > code:before, li > code:after, figcaption > code:before, figcaption > code:after, td > code:before, td > code:after { letter-spacing: -0.2em; content: "\00a0"; /* non-breaking space*/ }
 
 /* horizontal rule */
 hr { display: block; margin: 1em 0; border: 0; border-top: 1px solid #f2f3f3; }
@@ -554,6 +551,8 @@ tr, td, th { vertical-align: middle; }
 
 .notice a:hover { color: #5f6162; }
 
+blockquote.notice { border-left-color: #aaaeb0; }
+
 .notice code { background-color: #f8f9f9; }
 
 .notice pre code { background-color: inherit; }
@@ -574,6 +573,8 @@ tr, td, th { vertical-align: middle; }
 .notice--primary a { color: #646b71; }
 
 .notice--primary a:hover { color: #383c3f; }
+
+blockquote.notice--primary { border-left-color: #646b71; }
 
 .notice--primary code { background-color: #f1f1f2; }
 
@@ -596,6 +597,8 @@ tr, td, th { vertical-align: middle; }
 
 .notice--info a:hover { color: #1e4e5d; }
 
+blockquote.notice--info { border-left-color: #358ca7; }
+
 .notice--info code { background-color: #ebf5f8; }
 
 .notice--info pre code { background-color: inherit; }
@@ -616,6 +619,8 @@ tr, td, th { vertical-align: middle; }
 .notice--warning a { color: #c17205; }
 
 .notice--warning a:hover { color: #6b4003; }
+
+blockquote.notice--warning { border-left-color: #c17205; }
 
 .notice--warning code { background-color: #fbf2e6; }
 
@@ -638,6 +643,8 @@ tr, td, th { vertical-align: middle; }
 
 .notice--success a:hover { color: #205320; }
 
+blockquote.notice--success { border-left-color: #399539; }
+
 .notice--success code { background-color: #ecf6ec; }
 
 .notice--success pre code { background-color: inherit; }
@@ -658,6 +665,8 @@ tr, td, th { vertical-align: middle; }
 .notice--danger a { color: #d65652; }
 
 .notice--danger a:hover { color: #77302e; }
+
+blockquote.notice--danger { border-left-color: #d65652; }
 
 .notice--danger code { background-color: #fdefef; }
 
@@ -1141,7 +1150,7 @@ body:hover .visually-hidden a, body:hover .visually-hidden input, body:hover .vi
 
 .social-icons .fa-bitbucket { color: #205081; }
 
-.social-icons .fa-dribbble, .social-icons .fa-dribble-square { color: #ea4c89; }
+.social-icons .fa-dribbble, .social-icons .fa-dribbble-square { color: #ea4c89; }
 
 .social-icons .fa-facebook, .social-icons .fa-facebook-square, .social-icons .fa-facebook-f { color: #3b5998; }
 
@@ -1181,9 +1190,9 @@ body:hover .visually-hidden a, body:hover .visually-hidden input, body:hover .vi
 
 .social-icons .fa-vine { color: #00bf8f; }
 
-.social-icons .fa-youtube { color: #bb0000; }
-
 .social-icons .fa-xing, .social-icons .fa-xing-square { color: #006567; }
+
+.social-icons .fa-youtube { color: #bb0000; }
 
 /* Navicons ========================================================================== */
 .navicon { position: relative; width: 1.5rem; height: 0.25rem; background: #6f777d; margin: auto; -webkit-transition: 0.3s; transition: 0.3s; }
@@ -1255,6 +1264,27 @@ a.reversefootnote:hover { text-decoration: underline; }
 
 :-webkit-full-screen-ancestor .masthead, :-webkit-full-screen-ancestor .page__footer { position: static; }
 
+/* Copy <pre> block to clipboard ========================================================================== */
+.clipboard-helper { font-size: 12pt !important; border: 0 !important; padding: 0 !important; margin: 0 !important; outline: none !important; position: absolute; }
+
+pre.highlight .clipboard-copy-button { color: #ffffca; }
+
+pre .clipboard-copy-button { display: block; position: absolute; top: 0.6em; right: 0.5em; width: 1.8em; height: 1.5em; z-index: 1; background: none; border: none; outline: none; border-radius: 0.1em; padding: 0.2em 0.5em; opacity: 0.4; transition: color 0.25s linear -0.25s, opacity 0.25s linear; }
+
+pre .clipboard-copy-button::before { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 2; }
+
+pre .clipboard-copy-button i { position: absolute; top: 0.25em; right: 0.25em; }
+
+pre .clipboard-copy-button i.copied { opacity: 0; }
+
+pre .clipboard-copy-button.copied i { opacity: 0; }
+
+pre .clipboard-copy-button.copied i.copied { opacity: 1; }
+
+.no-copy pre .clipboard-copy-button { display: none; }
+
+pre:hover .clipboard-copy-button { opacity: 1; }
+
 /* Layout specific */
 /* ========================================================================== SINGLE PAGE/POST ========================================================================== */
 #main { clear: both; margin-left: auto; margin-right: auto; padding-left: 1em; padding-right: 1em; -webkit-animation: intro 0.3s both; animation: intro 0.3s both; max-width: 100%; -webkit-animation-delay: 0.15s; animation-delay: 0.15s; }
@@ -1277,6 +1307,8 @@ body { display: -webkit-box; display: -ms-flexbox; display: flex; min-height: 10
 
 .page__title { margin-top: 0; line-height: 1; }
 
+.page__title a { color: #3d4144; text-decoration: none; }
+
 .page__title + .page__meta, .page__title + .comment__date { margin-top: -0.5em; }
 
 .page__lead { font-family: "Roboto", "Helvetica Neue", "Lucida Grande", Lato, -apple-system, BlinkMacSystemFont, Arial, sans-serif; font-size: 1.25em; }
@@ -1296,6 +1328,10 @@ body { display: -webkit-box; display: -ms-flexbox; display: flex; min-height: 10
 .page__content a:not(.btn):hover { text-decoration: underline; }
 
 .page__content a:not(.btn):hover img { box-shadow: 0 0 10px rgba(0, 0, 0, 0.25); }
+
+.page__content :not(pre) > code { padding-top: 0.1rem; padding-bottom: 0.1rem; font-size: 0.8em; background: #fafafa; border-radius: 4px; }
+
+.page__content :not(pre) > code::before, .page__content :not(pre) > code::after { letter-spacing: -0.2em; content: "\00a0"; /* non-breaking space*/ }
 
 .page__content dt { margin-top: 1em; font-family: "Roboto", "Helvetica Neue", "Lucida Grande", Lato, -apple-system, BlinkMacSystemFont, Arial, sans-serif; font-weight: bold; }
 
@@ -1595,7 +1631,7 @@ body { display: -webkit-box; display: -ms-flexbox; display: flex; min-height: 10
 
 .sidebar__right { margin-bottom: 1em; }
 
-@media (min-width: 64em) { .sidebar__right { position: absolute; top: 0; right: 0; width: 200px; margin-right: -200px; padding-left: 1em; z-index: 10; } .sidebar__right.sticky { clear: both; position: -webkit-sticky; position: sticky; top: 2em; float: right; } .sidebar__right.sticky::after { clear: both; content: ""; display: table; } }
+@media (min-width: 64em) { .sidebar__right { position: absolute; top: 0; right: 0; width: 200px; margin-right: -200px; padding-left: 1em; z-index: 10; } .sidebar__right.sticky { clear: both; position: -webkit-sticky; position: sticky; top: 2em; float: right; } .sidebar__right.sticky::after { clear: both; content: ""; display: table; } .sidebar__right.sticky .toc .toc__menu { overflow-y: auto; max-height: calc(100vh - 7em); } }
 
 @media (min-width: 80em) { .sidebar__right { width: 300px; margin-right: -300px; } }
 
