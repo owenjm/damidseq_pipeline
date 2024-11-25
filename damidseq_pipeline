@@ -25,8 +25,8 @@ use 5.010;
 
 $|++;
 
-my $version = "1.5.3";
-print STDERR "\ndamidseq_pipeline v$version\nCopyright 2013-22, Owen Marshall\n\n";
+my $version = "1.6";
+print STDOUT "\ndamidseq_pipeline v$version\nCopyright 2013-24, Owen Marshall\n\n";
 
 # Global options
 my %vars = (
@@ -54,6 +54,7 @@ my %vars = (
 	'output_format'=>'bedgraph',
 	'method_subtract' => 0,
 	'paired' => 0,
+	'paired_match' => 'R|_',
 	'scores_as_rpm' => 1,
 	'pseudocounts' => 0,
 	'ps_factor' => 10,
@@ -63,6 +64,7 @@ my %vars = (
 	'norm_steps' => 300,
 	'just_align' => 0,
 	'just_coverage' => 0,
+	'catada' => 0,
 	'coverage' => 0,
 	'norm_method' => 'kde',
 	'save_defaults' => 0,
@@ -80,6 +82,13 @@ my %vars = (
 	'unique' => 0,
 	'kde_inline' => 1,
 	'chipseq' => 0,
+	'ncbam' => 0,
+	'n' => 0,
+	'exp_prefix' => '_',
+	'exp_suffix' => '',
+	'rep_prefix' => '_n',
+	'nogroups' => 0,
+	'datadir' => '',
 );
 
 my %vars_details = (
@@ -107,7 +116,8 @@ my %vars_details = (
 	'output_format' => 'Output tracks in this format [gff/bedgraph]',
 	'method_subtract' => 'Output values are (Dam_fusion - Dam) instead of log2(Dam_fusion/Dam) (not recommended)',
 	'pseudocounts' => 'Add this value of psuedocounts instead (default: optimal number of pseudocounts determined algorithmically)',
-	'paired' => 'Process paired-end reads',
+	'paired' => 'Process paired-end reads (deprecated: PE/SE detection should happen automagically)',
+	'paired_match' => 'characters to search for that, directly in front of [1|2], that marks paired-reads (regex format)',
 	'scores_as_rpm' => 'Calculate coverage scores (before normalisation) as reads per million (RPM)',
 	'ps_factor' => 'Value of c in c*(reads/bins) formula for calculating pseudocounts (default = 10)',
 	'ps_debug' => 'Print extra debugging info on pseudocount calculations in log file',
@@ -116,6 +126,7 @@ my %vars_details = (
 	'norm_steps' => 'Number of points in normalisation routine (default = 300)',
 	'just_align' => 'Just align the FASTQ files, generate BAM files, and exit',
 	'just_coverage' => 'Align, generate BAMs and calculate coverage; do generate ratio files',
+	'catada' => 'Generate coverage files for CATaDa. Alias for --just_coverage',
 	'coverage' => 'Save individual coverage bedgraphs',
 	'norm_method' => "Normalisation method to use; options are:\n\rkde: use kernel density estimation of log2 GATC fragment ratio (default)\n\rrpm: use readcounts per million reads (not recommended for most use cases)\n\rrawbins: process raw counts with external normalisation command (set with --rawbins_cmd)",
 	'save_defaults' => "Save runtime parameters as default\n\r(provide a name to differentiate different genomes -- these can be loaded with 'load_defaults')",
@@ -133,7 +144,13 @@ my %vars_details = (
 	'unique' => "Only map uniquely aligning reads",
 	'kde_inline' => 'Use Inline::C for KDE normalisation calculations',
 	'chipseq' => "Process ChIP-seq data\n\r(Equivalent to --just_coverage --as_gatc=0 --remdups --unique --extension_method=full --full_data_files)",
-
+	'ncbam' => "Don't clobber BAM files, skip if existing",
+	'n' => "Dry-run only; do not process files",
+	'exp_prefix' => "Common text string immediately preceding experiment name\n\r(e.g. if filename is Dam_Exp1_n1.fq.gz, use _ as the prefix)",
+	'exp_suffix' => "Common text string immediately proceding experiment name\n\r(Takes --rep_prefix if not set; or, if filename is Dam_Exp1_some-other-text_n1.fq.gz, use _ as the suffix)",
+	'rep_prefix' => "Common text string denoting replicates\n\r(e.g. if filename is Dam_Exp1_n1.fq.gz, use _n as the rep_prefix)",
+	'nogroups' => "Do not try to group experiments and replicates, and just process all samples as per v1.5.3 and earlier",
+	'datadir' => 'Process all files in this directory',
 );
 
 my @vars_unsaved = (
@@ -142,8 +159,10 @@ my @vars_unsaved = (
 	'load_defaults',
 	'just_align',
 	'just_coverage',
+	'catada',
 	'dam',
-	'out_name'
+	'out_name',
+	'nogroups'
 );
 
 # Global variables
@@ -169,6 +188,8 @@ my %seg;
 my %full_tracks;
 my %counts;
 my %bins;
+my %exps;
+my %reps;
 
 my $HOME = (getpwuid($<))[7];
 my $pi = 3.1415926536;
@@ -194,6 +215,9 @@ read_defaults();
 parameter_check();
 process_cli(1);
 
+# Files check
+check_input_files();
+
 # CLI processing
 check_paths();
 save_defaults();
@@ -202,53 +226,34 @@ save_defaults();
 init_log_file();
 
 # Final sanity checks
-final_sanity_check();
-
-# Read input files
-process_input_files();
+sanity_check();
 
 # Check executables are present in path
 executable_check();
 
-
-#############################
-### Pipeline workflow
-###
-
-align_sequences();
+# Load GATC frags if required
 load_gatc_frags() unless (!$vars{'as_gatc'} || (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'}));
 
-if ($vars{'extension_method'} eq 'full') {
-	extend_reads_full();
+find_groups();
+
+# Exit if dry-run
+exit 0 if ($vars{'n'});
+
+# Now loop through samples
+if ($vars{'nogroups'}) {
+	# Either all samples if old functionality is requested
+	main_pipeline(@in_files);
 } else {
-	extend_reads_gatc();
+	# Or using new automatic groupings
+	map {
+		my $e=$_;	
+		map {
+			my @group = @{ $reps{$e}{$_} };
+			printout ("\n*** Now working on $e | Replicate $_\n\n");
+			main_pipeline(@group);
+		} (sort keys %{$reps{$e}});
+	} (sort keys %reps);
 }
-
-exit 0 if $vars{'just_align'};
-
-calc_bins();
-
-if ($vars{'write_raw'}) {
-	generate_raw_files();
-	exit 0;
-}
-
-if ($vars{'just_coverage'} || $vars{'coverage'}) {
-	generate_cov_files();
-	exit 0 if $vars{'just_coverage'};
-}
-
-if ($vars{'norm_method'} eq 'kde') {
-	find_quants();
-	find_norm_factor();
-}
-
-if ($vars{'norm_method'} eq 'rawbins') {
-	find_norm_factor_raw();
-}
-
-normalize();
-generate_ratio();
 
 printout("\nAll done.\n\n");
 
@@ -258,6 +263,84 @@ exit 0;
 #############################
 ### Subroutines start here
 ###
+
+sub main_pipeline {
+	# Pipeline workflow
+	
+	my @in_files_rep = @_;
+	%files=();
+	$damname="";
+	
+	process_input_files(@in_files_rep);
+
+	align_sequences();
+	
+	if (!$vars{'paired'}) {
+		# Do not extend reads if using PE sequencing (as we know the exact fragment length)
+		# I cannot see a reason to not hardcode in this sanity check, but if there are edge
+		# cases please let me know
+		if ($vars{'extension_method'} eq 'full') {
+			extend_reads_full();
+		} else {
+			extend_reads_gatc();
+		}
+	}
+	
+	return if $vars{'just_align'};
+	
+	calc_bins();
+	
+	if ($vars{'write_raw'}) {
+		generate_raw_files();
+		return;
+	}
+	
+	if ($vars{'just_coverage'} || $vars{'coverage'}) {
+		generate_cov_files();
+		return if $vars{'just_coverage'};
+	}
+	
+	if ($vars{'norm_method'} eq 'kde') {
+		find_quants();
+		find_norm_factor();
+	}
+	
+	if ($vars{'norm_method'} eq 'rawbins') {
+		find_norm_factor_raw();
+	}
+	
+	normalize();
+	generate_ratio();
+}
+
+sub find_groups {
+	return if $vars{'nogroups'};
+	
+	map {
+		my $f = basename($_);
+		my $e = $f =~(/$vars{'exp_prefix'}(.*?)$vars{'exp_suffix'}/) ? $1 : 'unmatched';
+		push(@{$exps{$e}},$_);
+	} @in_files;
+	
+	foreach my $e (keys %exps) {
+		map {
+			my $f = basename($_);
+			my $r = $f =~ (m/.*?$vars{'rep_prefix'}.*?(\d)/) ? $1 : 'unrep';
+			push( @{$reps{$e}{$r}}, $_ );
+		} @{ $exps{$e} };
+	}
+	
+	printout("Found the following groups:\n");
+	map {
+		my $e = $_ || "default";
+		printout("\nExperiment $e:");
+		
+		map {
+			printout("\n Rep $_:\n   ", join("\n   ", @{ $reps{$e}{$_} }), "\n");
+		} (sort keys %{$reps{$e}});
+		
+	} (keys %reps);
+}
 
 sub check_paths {
 	# Check paths
@@ -325,7 +408,7 @@ sub executable_check {
 	}
 }
 
-sub final_sanity_check {
+sub sanity_check {
 	if ($vars{'norm_method'} eq 'rawbins') {
 		unless ($vars{'rawbins_cmd'}) {
 			print STDERR "Error: rawbins normalisation method selected, but no custom command supplied.\n\nPlease use the --rawbins_cmd to specify the command to provide normalisation factors from raw data.\n\n";
@@ -340,6 +423,10 @@ sub final_sanity_check {
 		$vars{'just_coverage'} = 1;
 	}
 	
+	if ($vars{'catada'}) {
+		$vars{'just_coverage'} = 1;
+	}
+	
 	unless ($vars{'as_gatc'}) {
 		$vars{'extension_method'}="full";
 		$vars{'full_data_files'}=1;
@@ -347,6 +434,12 @@ sub final_sanity_check {
 	}
 	
 	$vars{'markdup'} = 1 if $vars{'remdups'};
+	
+	# if not explicitly set, exp_suffix is set to rep_prefix
+	$vars{'exp_suffix'} ||= $vars{'rep_prefix'};
+	
+	# if not explicitly set, datadir is .
+	$vars{'datadir'} ||= '.'
 }
 
 
@@ -382,33 +475,36 @@ sub process_cli {
 	}
 }
 
+sub check_input_files {
+	# CLI files 
+	# if no files specified, process all .gz files in directory.
+	unless (@in_files) {
+		@in_files = glob("$vars{'datadir'}*.fastq.gz");
+		@in_files = glob("$vars{'datadir'}*.gz") unless scalar(@in_files);
+		@in_files = glob("$vars{'datadir'}*.fastq") unless scalar(@in_files);
+		@in_files = glob("$vars{'datadir'}*.bam") unless scalar(@in_files);
+		if ($vars{'bamfiles'}) {
+			@in_files = glob("$vars{'datadir'}*.bam");
+		}
+	}
+}
+
 
 sub process_input_files {
+	my @in_files_rep = @_;
 	
 	# Check for user-specified dam control
 	if ($vars{'dam'}) {
-		push @in_files, $vars{'dam'}
+		push @in_files_rep, $vars{'dam'}
 	}
 	
 	# Get unique list of infiles
-	@in_files = uniq(@in_files);
+	@in_files_rep = uniq(@in_files_rep);
 	
 	# Index file
 	my $index_file = "index.txt";
 	
-	# CLI files 
-	# if no files specified, process all .gz files in directory.
-	unless (@in_files) {
-		@in_files = glob("*.fastq.gz");
-		@in_files = glob("*.gz") unless scalar(@in_files);
-		@in_files = glob("*.fastq") unless scalar(@in_files);
-		@in_files = glob("*.bam") unless scalar(@in_files);
-		if ($vars{'bamfiles'}) {
-			@in_files = glob("*.bam");
-		}
-	}
-	
-	unless (@in_files) {
+	unless (@in_files_rep) {
 		printout("ERROR: no FASTQ or BAM files found (and no files specified on the command-line).\n(Use --help to see command-line options ...)\n\n");
 		exit 1;
 	}
@@ -426,7 +522,7 @@ EOT
 
 	if ($vars{'bamfiles'}) {
 		# Bamfiles
-		foreach my $l (@in_files) {
+		foreach my $l (@in_files_rep) {
 			my ($name,$dir,$ext) = fileparse($l, qr/\.[^.]*/);
 			next unless $ext =~ m/bam/;
 			
@@ -435,8 +531,9 @@ EOT
 			$files{$name}[0]=$l;
 			check_dam_name($name, $l);
 		}
-	} elsif (@in_files && !(-e $index_file)) {
-		foreach my $l (@in_files) {
+	} elsif (@in_files_rep && !(-e $index_file)) {
+		my %skipped_files;
+		foreach my $l (@in_files_rep) {
 			my ($name_long,$dir,$ext) = fileparse($l, qr/\..*/);
 			my $name;
 			if ($vars{'no_file_filters'}) {
@@ -448,13 +545,35 @@ EOT
 			
 			$vars{'bamfiles'} = 1 if $ext =~ /bam/;
 			
-			if ($vars{'paired'} && !$vars{'bamfiles'}) {
-				$vars{'extend_reads'} = 0;
+			if (!$vars{'bamfiles'}) {
+				# $vars{'extend_reads'} = 0;
 				# find paired end fastq files
 				my ($pmatch) = $name_long =~ m/(.*[R|_])[1|2](?=[_\d]*$)/;
 				
 				unless ($pmatch) {
-					print "Error: $name_long not paired?  File ignored ...\n";
+					printout("  $name_long not paired.  Assuming SE sequencing ...\n");
+					if ($files{$name}) {
+						#same name already in use
+						my $i = 1;
+						while ($files{"$name.$i"}) {
+							$i++;
+						}
+						$name = "$name.$i";
+					}
+					$files{$name}[0]=$l;
+					next;
+				} else {
+					#printout(" Paired-end reads detected ...");
+					$vars{'paired'} = 1;
+					$vars{'extend_reads'} = 0;
+				}
+				
+				my $name_nopmatch = $pmatch;
+				chop($name_nopmatch);
+				if ($vars{'ncbam'} && (-e "$name_nopmatch.bam")) {
+					next if $skipped_files{"$name_nopmatch"};
+					$skipped_files{"$name_nopmatch"}++;
+					print "  $name_nopmatch.bam exists: skipping ...\n";
 					next;
 				}
 				
@@ -468,7 +587,7 @@ EOT
 				} elsif ($name_long =~ m/$pmatch2/) {
 					$files{$name}[1]=$l;
 				} else {
-					die("Error: paired-end reads set but cannot find paired-end flag: $name_long\nExiting.\n\n");
+					die("Error: paired-end reads detected but cannot find paired-end flag: $name_long\nExiting.\n\n");
 				}
 			} else {
 				if ($files{$name}) {
@@ -479,11 +598,17 @@ EOT
 					}
 					$name = "$name.$i";
 				}
+				if ($vars{'ncbam'} && (-e "$name.bam")) {
+					next if $skipped_files{"$name"};
+					$skipped_files{"$name"}++;
+					print "  $name.bam exists: skipping ...\n";
+					next;
+				}
 				$files{$name}[0]=$l;
 			}			
 		}
 		
-		foreach my $name (sort(keys %files)) {
+		foreach my $name (sort keys %files) {
 			unless ($vars{'just_align'} || $vars{'just_coverage'}) {
 				check_dam_name($name, @{$files{$name}}[0]);
 			}
@@ -494,6 +619,8 @@ EOT
 		}
 		
 	} elsif (-e $index_file) {
+		print STDERR "*** Warning: the use of an explict index file is deprecated.  You can still use this option, but some new replicate matching functionality may be missing.\n\n";
+		
 		open (NORM, "<$index_file") || die "Unable to open index file for reading: $!\n";
 		my @norm = <NORM>;
 		close NORM;
@@ -515,7 +642,7 @@ EOT
 		}
 		
 		printout("\n*** Matching adaptors ***\n");
-		foreach my $l (@in_files) {
+		foreach my $l (@in_files_rep) {
 			print "$l\n";
 			
 			## Change this next line's regexp to match your sequencing format (currently matches, e.g. "Index6" or "A006")
@@ -587,7 +714,7 @@ sub read_defaults {
 		if ($vars{'load_defaults'} eq 'list') {
 			print_defaults_files();
 		} else {
-			unless (-e "$HOME/.config/damid_pipeline/defaults.$vars{'load_defaults'}") {
+			unless (-e "$HOME/.config/damid_pipelinef/defaults.$vars{'load_defaults'}") {
 				print STDERR "Error: cannot find saved defaults file for '$vars{'load_defaults'}'\n\n";
 				print_defaults_files();
 			}
@@ -680,7 +807,7 @@ sub align_sequences {
 	if ($vars{'bowtie'}) {
 		
 		printout("\n*** Aligning files with bowtie2 ***\n");
-		foreach my $fn (keys %files) {
+		foreach my $fn (sort keys %files) {
 			
 			my $samtools_pipe = "$vars{'samtools_path'}samtools view -Shb - > $fn.bam";
 			if ($vars{'markdup'}) {
@@ -719,7 +846,7 @@ sub extend_reads_full {
 	# Extend reads
 	if ($vars{'extend_reads'}) {
 		printout("*** Extending reads to $vars{'len'} bases (full extension) ***\n");
-		foreach my $fn (keys %files) {
+		foreach my $fn (sort keys %files) {
 			printout("Reading input file: $fn ...\n");
 			open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
 			
@@ -787,7 +914,7 @@ sub extend_reads_gatc {
 	# Extend reads
 	if ($vars{'extend_reads'}) {
 		printout("*** Extending reads up to $vars{'len'} bases ***\n");
-		foreach my $fn (keys %files) {
+		foreach my $fn (sort keys %files) {
 			printout("Reading input file: $fn ...\n");
 			open (IN, "$vars{'samtools_path'}samtools view -h $fn.bam |") || die "Unable to read $fn: $!\n";
 			
@@ -912,7 +1039,7 @@ sub extend_reads_gatc {
 
 sub calc_bins {
 	printout("*** Calculating bins ***");
-	foreach my $n (keys %files) {
+	foreach my $n (sort keys %files) {
 		my $fn = $vars{'bamfiles'} ? $files{$n}[0] :
 					$vars{'extend_reads'} ? "$n-ext$vars{'len'}" : $n;
 		$fn =~ s/\.bam$//;
@@ -1044,7 +1171,7 @@ sub calc_bins {
 						exit 1;
 					}
 				} else {
-					printout("  Error: chromsome definitions between bam and GATC file do not match!\n");
+					printout("  Error: chromosome definitions between bam and GATC file do not match!\n");
 				}
 			}
 		}
@@ -1089,7 +1216,7 @@ sub calc_bins {
 				$index++;
 				# Get two adjacent GATC sites
 				my ($mida) = @{$gatc{$chr}}[$i];
-				my ($midb) = @{$gatc{$chr}}[$i+1];
+				my ($midb) = @{$gatc{$chr}}[$i+1] - 1; # avoid overlaps
 		
 				if ($index%100 == 0) {
 					my $pc = sprintf("%0.0f",($index*100)/$#gatc_simple);
@@ -1146,7 +1273,7 @@ sub calc_bins {
 
 sub normalize {
 	printout("\n*** Normalising ***\n");
-	foreach my $n (keys %files) {
+	foreach my $n (sort keys %files) {
 		next if $n eq $damname; # we don't normalise the Dam control
 		printout("Processing sample: $n ...\n");
 		
@@ -1190,15 +1317,15 @@ sub normalize {
 }
 
 sub printout {
-	my $s = shift;
-	print STDERR $s;
+	my $s = join("",@_);
+	print STDOUT $s;
 	print LOG $s;
 }
 
 
 sub generate_ratio {
 	printout("\n*** Generating ratios ***\n");
-	foreach my $n (keys %files) {
+	foreach my $n (sort keys %files) {
 		next if $n eq $damname;
 		
 		printout("Now working on $n ...\n"); 
@@ -1210,7 +1337,7 @@ sub generate_ratio {
 
 sub generate_raw_files {
 	printout("\n*** Writing raw files ***\n");
-	foreach my $n (keys %files) {
+	foreach my $n (sort keys %files) {
 		next if $n eq $damname;
 		
 		printout("Now working on $n ...\n"); 
@@ -1222,7 +1349,7 @@ sub generate_raw_files {
 
 sub generate_cov_files {
 	printout("\n*** Writing coverage files ***\n");
-	foreach my $n (keys %files) {		
+	foreach my $n (sort keys %files) {		
 		printout("Now working on $n ...\n");
 		my $write_gatc = $vars{'as_gatc'} ? 1 : 0;
 		write_cov($n, $write_gatc);
@@ -1354,7 +1481,7 @@ sub write_file {
 	my $fout=$fname.( $vars{'output_format'} =~ m/^bed/ ? 'bedgraph' : 'gff' );
 	
 	if ($vars{'scores_as_rpm'}) {
-		printout(sprintf("  ... adding %0.2fe-3 pseudocounts to each sample\n",$pseudocounts*1e3));
+		printout(sprintf("  ... adding %0.2f pseudocounts to each sample\n",$pseudocounts));
 	} else {
 		printout(sprintf("  ... adding %0.2f pseudocounts to each sample\n",$pseudocounts));
 	}
@@ -1413,7 +1540,7 @@ sub find_norm_factor_raw {
 	
 	generate_raw_files();
 		
-	foreach my $n (keys %files) {
+	foreach my $n (sort keys %files) {
 		next if $n eq $damname;
 		my $protname = $vars{'out_name'} ? $vars{'out_name'} : $n;
 		
@@ -1430,7 +1557,7 @@ sub find_norm_factor_raw {
 sub find_norm_factor {
 	printout("*** Calculating normalisation factor ***\n");
 		
-	foreach my $n (keys %files) {
+	foreach my $n (sort keys %files) {
 		next if $n eq $damname;
 		
 		printout("Now working on $n ...\n");
@@ -1511,7 +1638,7 @@ sub qsc {
 
 sub find_quants {
 	printout("\n*** Calculating quantiles ***\n");
-	for my $prot (keys %files) {
+	for my $prot (sort keys %files) {
 		my @frags;
 				
 		printout("Now working on $prot ...\n");
@@ -1753,6 +1880,9 @@ sub help {
 		write();		
 	}
 	print STDOUT "\n";
+	
+	print STDOUT "More details and latest version available at https://owenjm.github.io/damidseq_pipeline\n";
+	
 	exit 1;
 }
 
@@ -1768,7 +1898,7 @@ sub load_gatc_frags {
 		
 	foreach (<GATC>) {
 		my ($chr, $source, $type, $start, $end, $score, $b, $c, $name) = split('\t');
-		my $mid = ($start+$end)/2;
+		my $mid = $start+2; # clean up an old fencepost snafu for good
 		push (@gatc_simple, [$chr, $mid]);
 		push @{$gatc{$chr}}, $mid;
 	}
@@ -1832,7 +1962,27 @@ sub uniq {
 BEGIN {
     eval {
         require Inline::C;
-        Inline->import('C' => q {
+		
+		my $HOME = (getpwuid($<))[7];
+		unless (-d "$HOME/.config") {
+			mkdir("$HOME/.config");
+		}
+		
+		unless (-d "$HOME/.config/damid_pipeline") {
+			mkdir("$HOME/.config/damid_pipeline");
+		}
+		
+		unless (-d "$HOME/.config/damid_pipeline") {
+			mkdir("$HOME/.config/damid_pipeline/cache");
+		}
+		
+		if (-d "$HOME/.config/damid_pipeline/cache") {
+			# set Inline::C compile directory
+			Inline->import(Config => DIRECTORY => "$HOME/.config/damid_pipeline/cache");
+		}
+		
+        Inline->import(
+					   'C' => q {
 				#include <math.h>
 				double kden_calc (double y, double h, double sq2pi, SV* terms) {
 					int n = 0;
