@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Copyright © 2013-21, Owen Marshall
+# Copyright © 2013-25, Owen Marshall
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@ use 5.010;
 
 $|++;
 
-my $version = "1.6";
-print STDOUT "\ndamidseq_pipeline v$version\nCopyright 2013-24, Owen Marshall\n\n";
+my $version = "1.6.1";
+print STDOUT "\ndamidseq_pipeline v$version\nCopyright 2013-25, Owen Marshall\n\n";
 
 # Global options
 my %vars = (
@@ -231,9 +231,7 @@ sanity_check();
 # Check executables are present in path
 executable_check();
 
-# Load GATC frags if required
-load_gatc_frags() unless (!$vars{'as_gatc'} || (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'}));
-
+# Find groupings
 find_groups();
 
 # Exit if dry-run
@@ -274,6 +272,9 @@ sub main_pipeline {
 	process_input_files(@in_files_rep);
 
 	align_sequences();
+	
+	# Load GATC frags if required
+	load_gatc_frags() unless (!$vars{'as_gatc'} || (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'}));
 	
 	if (!$vars{'paired'}) {
 		# Do not extend reads if using PE sequencing (as we know the exact fragment length)
@@ -363,10 +364,14 @@ sub check_paths {
 	}
 	
 	# Parameter checks:
-	for my $p ('gatc_frag_file','bowtie2_genome_dir') {
+	for my $p ('gatc_frag_file') {
 		unless ($vars{$p}) {
 			die("Please use the --$p option to specifiy the $vars_details{$p} ...\n\n");
 		}
+	}
+	
+	unless ($vars{'bamfiles'} || $vars{'bowtie2_genome_dir'}) {
+		die("Please use the --bowtie2_genome_dir option to specifiy the $vars_details{'bowtie2_genome_dir'} ...\n\n");
 	}
 	
 	# Save file paths if they haven't been set before
@@ -479,12 +484,20 @@ sub check_input_files {
 	# CLI files 
 	# if no files specified, process all .gz files in directory.
 	unless (@in_files) {
+		if ($vars{'bamfiles'}) {
+			@in_files = glob("$vars{'datadir'}*.bam");
+			return;
+		}
+		
 		@in_files = glob("$vars{'datadir'}*.fastq.gz");
 		@in_files = glob("$vars{'datadir'}*.gz") unless scalar(@in_files);
 		@in_files = glob("$vars{'datadir'}*.fastq") unless scalar(@in_files);
-		@in_files = glob("$vars{'datadir'}*.bam") unless scalar(@in_files);
-		if ($vars{'bamfiles'}) {
+		
+		unless (scalar(@in_files)) {
 			@in_files = glob("$vars{'datadir'}*.bam");
+			if (scalar(@in_files)) {
+				$vars{'bamfiles'} = 1;
+			}
 		}
 	}
 }
@@ -562,11 +575,11 @@ EOT
 					}
 					$files{$name}[0]=$l;
 					next;
-				} else {
-					#printout(" Paired-end reads detected ...");
-					$vars{'paired'} = 1;
-					$vars{'extend_reads'} = 0;
-				}
+				} #else {
+				#	printout(" Paired-end reads detected ...");
+				#	$vars{'paired'} = 1;
+				#	$vars{'extend_reads'} = 0;
+				#}
 				
 				my $name_nopmatch = $pmatch;
 				chop($name_nopmatch);
@@ -698,11 +711,11 @@ sub check_dam_name {
 sub read_defaults {
 	# Create config directory if it doesn't exist
 	unless (-d "$HOME/.config") {
-		mkdir("$HOME/.config");
+		mkdir("$HOME/.config") || print STDERR "Error: Could not create $HOME/.config/ dir: $!\n";
 	}
 	
 	unless (-d "$HOME/.config/damid_pipeline") {
-		mkdir("$HOME/.config/damid_pipeline");
+		mkdir("$HOME/.config/damid_pipeline") || print STDERR "Error: Could not create $HOME/.config/damid_pipeline/ dir: $!\n";
 	}
 	
 	# Migration for version 1.0 
@@ -745,7 +758,7 @@ sub print_defaults_files {
 
 sub read_defaults_file {
 	my $file = shift;
-	open(DEFAULTS, "<$file") || die("Cannot open defaults file for writing: $!\n\n");
+	open(DEFAULTS, "<$file") || die("Cannot open defaults file for reading: $!\n\n");
 	while (<DEFAULTS>) {
 		chomp;
 		my ($p,$v) = split;
@@ -768,13 +781,19 @@ sub save_defaults {
 		}
 		
 		print STDERR "Writing defaults to file ...\n";
-		open(DEFAULTS,">$HOME/.config/damid_pipeline/defaults$name") || die("Cannot open defaults file for writing: $!\n\n");
+		
+		unless (open(DEFAULTS,">$HOME/.config/damid_pipeline/defaults$name")) {
+			print STDERR "Warning: cannot open defaults file for writing: $!\nPipeline will continue without saving defaults ...\n\n";
+			return;
+		}
+		
 		for my $p (keys %vars) {
 			next if $donotsave{$p};
 			next unless $vars{$p};
 			print DEFAULTS "$p\t$vars{$p}\n";
 		}
-		print STDERR "Done.\n\n";
+		
+		print STDOUT "Done.\n\n";
 		close DEFAULTS;
 		exit 0;
 	}
@@ -823,9 +842,12 @@ sub align_sequences {
 			
 			printout("Now working on $fn ...\n");
 			
-			$vars{'paired'} ?
-				`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} $vars{'bowtie2_add_flags'} -1 $pair1 -2 $pair2 2>tmp.out | $samtools_pipe` :
+			if ($pair2) {
+				`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} $vars{'bowtie2_add_flags'} -1 $pair1 -2 $pair2 2>tmp.out | $samtools_pipe`;
+				$vars{'paired'}=1;
+			} else {
 				`$vars{'bowtie2_path'}bowtie2 -p $vars{'threads'} -x $vars{'bowtie2_genome_dir'} $vars{'bowtie2_add_flags'} -U $pair1  2>tmp.out | $samtools_pipe`;
+			}
 			
 			open(my $tmp, '<', "tmp.out") || die "Cannot open temporary bowtie output for reading: $!\n";
 			$bowtie_output{$fn} = join("",<$tmp>);
@@ -1254,6 +1276,9 @@ sub calc_bins {
 				}
 				my $mean = mean(@data);
 				
+				# insane edge-case sanity check
+				next if $mida >= $midb;
+				
 				push(@{$gatc_frags{"$chr-$mida-$midb"}}, $n);
 				$gatc_frag_score{"$chr-$mida-$midb"}{$n}=$mean;
 				$array{$chr}{$mida}{$n} = $mean;
@@ -1500,6 +1525,7 @@ sub write_file {
 	foreach my $chr (sort keys %data) {
 		foreach my $start (sort {$a <=> $b} keys %{ $data{$chr}}) {
 			my ($end, $score1, $score2) = @{ $data{$chr}{$start}};
+			next if $start >= $end;
 			
 			my $score = generate_score($score1,$score2, $pseudocounts);
 			
@@ -1965,15 +1991,15 @@ BEGIN {
 		
 		my $HOME = (getpwuid($<))[7];
 		unless (-d "$HOME/.config") {
-			mkdir("$HOME/.config");
+			mkdir("$HOME/.config") || print STDERR "Error: Could not create $HOME/.config/ dir: $!\n";
 		}
 		
 		unless (-d "$HOME/.config/damid_pipeline") {
-			mkdir("$HOME/.config/damid_pipeline");
+			mkdir("$HOME/.config/damid_pipeline") || print STDERR "Error: Could not create $HOME/.config/damid_pipeline/ dir: $!\n";
 		}
 		
 		unless (-d "$HOME/.config/damid_pipeline") {
-			mkdir("$HOME/.config/damid_pipeline/cache");
+			mkdir("$HOME/.config/damid_pipeline/cache") || print STDERR "Error: Could not create $HOME/.config/damid_pipeline/cache/ dir: $!\n";
 		}
 		
 		if (-d "$HOME/.config/damid_pipeline/cache") {

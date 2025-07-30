@@ -1,3 +1,8 @@
+## v1.6.1
+*  Fixed: improved handling of paired-end vs. single-end reads
+*  Fixed: better error handling of issues creating the config folder in the user's home directory
+*  Fixed: removed the need to specify bowtie2 indices when providing BAM files
+
 ## v1.6
 *  New feature: automatic grouping and processing of experiments and replicates within the set of input files (if you don't want to use this, run with `--nogroups` to restore old v1.5.3 functionality).  This removes the need for any higher-level scripting of sample processing, and means that a large set of disparate samples can be processed with just a single command. Experimental and replicate group detection relies on three parameters:
     * `--exp_prefix`: the common characters immediately preceding the experiment name (default `_`)
