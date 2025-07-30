@@ -11,7 +11,7 @@
     <meta charset="utf-8">
 
 <!-- begin _includes/seo.html --><title>damidseq_pipeline - damidseq_pipeline</title>
-<meta name="description" content="An automated pipeline for processing DamID-seq datasets     latest version: 1.6">
+<meta name="description" content="An automated pipeline for processing DamID-seq datasets     latest version: 1.6.1">
 
 
 
@@ -22,7 +22,7 @@
 <meta property="og:url" content="https://owenjm.github.io/damidseq_pipeline/changelog.html">
 
 
-  <meta property="og:description" content="An automated pipeline for processing DamID-seq datasets     latest version: 1.6">
+  <meta property="og:description" content="An automated pipeline for processing DamID-seq datasets     latest version: 1.6.1">
 
 
 
@@ -183,7 +183,7 @@
         
       </h1>
       
-        <p class="page__lead">An automated pipeline for processing DamID-seq datasets   <br /> <small> <a href="https://github.com/owenjm/damidseq_pipeline/releases">latest version: 1.6</a> </small>
+        <p class="page__lead">An automated pipeline for processing DamID-seq datasets   <br /> <small> <a href="https://github.com/owenjm/damidseq_pipeline/releases">latest version: 1.6.1</a> </small>
 </p>
       
       
@@ -213,7 +213,7 @@
 
   <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
     
-    <meta itemprop="description" content="An automated pipeline for processing DamID-seq datasets     latest version: 1.6 ">
+    <meta itemprop="description" content="An automated pipeline for processing DamID-seq datasets     latest version: 1.6.1 ">
     
     
 
@@ -222,7 +222,14 @@
 
       <section class="page__content" itemprop="text">
         
-        <h2 id="v16">v1.6</h2>
+        <h2 id="v161">v1.6.1</h2>
+<ul>
+  <li>Fixed: improved handling of paired-end vs. single-end reads</li>
+  <li>Fixed: better error handling of issues creating the config folder in the user’s home directory</li>
+  <li>Fixed: removed the need to specify bowtie2 indices when providing BAM files</li>
+</ul>
+
+<h2 id="v16">v1.6</h2>
 <ul>
   <li>New feature: automatic grouping and processing of experiments and replicates within the set of input files (if you don’t want to use this, run with <code class="language-plaintext highlighter-rouge">--nogroups</code> to restore old v1.5.3 functionality).  This removes the need for any higher-level scripting of sample processing, and means that a large set of disparate samples can be processed with just a single command. Experimental and replicate group detection relies on three parameters:
     <ul>
@@ -408,7 +415,7 @@
     
       
         
-          <li><a href="https://twitter.com/OMarshall_lab" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-twitter-square" aria-hidden="true"></i> Twitter</a></li>
+          <li><a href="https://bsky.app/profile/owenmarshall.bsky.social" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-bluesky-square" aria-hidden="true"></i> Bluesky</a></li>
         
       
         
@@ -423,7 +430,7 @@
   </ul>
 </div>
 
-<div class="page__footer-copyright">&copy; 2024 <a href="https://owenjm.github.io">damidseq_pipeline</a>. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+<div class="page__footer-copyright">&copy; 2025 <a href="https://owenjm.github.io">damidseq_pipeline</a>. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
 
       </footer>
     </div>
