@@ -1,5 +1,8 @@
+## v1.6.2
+*  Fixed: handling of paired-end vs. single-end reads (hotfix for errors introduced in v1.6.1)
+
 ## v1.6.1
-*  Fixed: improved handling of paired-end vs. single-end reads
+*  Changed: improved handling of paired-end vs. single-end reads
 *  Fixed: better error handling of issues creating the config folder in the user's home directory
 *  Fixed: removed the need to specify bowtie2 indices when providing BAM files
 

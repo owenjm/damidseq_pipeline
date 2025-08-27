@@ -25,7 +25,7 @@ use 5.010;
 
 $|++;
 
-my $version = "1.6.1";
+my $version = "1.6.2";
 print STDOUT "\ndamidseq_pipeline v$version\nCopyright 2013-25, Owen Marshall\n\n";
 
 # Global options
@@ -89,6 +89,7 @@ my %vars = (
 	'rep_prefix' => '_n',
 	'nogroups' => 0,
 	'datadir' => '',
+	'version'=> 0
 );
 
 my %vars_details = (
@@ -151,6 +152,7 @@ my %vars_details = (
 	'rep_prefix' => "Common text string denoting replicates\n\r(e.g. if filename is Dam_Exp1_n1.fq.gz, use _n as the rep_prefix)",
 	'nogroups' => "Do not try to group experiments and replicates, and just process all samples as per v1.5.3 and earlier",
 	'datadir' => 'Process all files in this directory',
+	'version' => 'Print version and exit'
 );
 
 my @vars_unsaved = (
@@ -162,7 +164,8 @@ my @vars_unsaved = (
 	'catada',
 	'dam',
 	'out_name',
-	'nogroups'
+	'nogroups',
+	'version'
 );
 
 # Global variables
@@ -172,6 +175,7 @@ my @in_files;
 
 my %ampnorm;
 my %files;
+my %files_paired;
 my %index;
 my %ar;
 my %array;
@@ -270,12 +274,12 @@ sub main_pipeline {
 	$damname="";
 	
 	process_input_files(@in_files_rep);
-
+	
 	align_sequences();
 	
 	# Load GATC frags if required
 	load_gatc_frags() unless (!$vars{'as_gatc'} || (($vars{'extension_method'} eq 'full' || $vars{'paired'}) && $vars{'just_align'}));
-	
+		
 	if (!$vars{'paired'}) {
 		# Do not extend reads if using PE sequencing (as we know the exact fragment length)
 		# I cannot see a reason to not hardcode in this sanity check, but if there are edge
@@ -285,6 +289,9 @@ sub main_pipeline {
 		} else {
 			extend_reads_gatc();
 		}
+	} else {
+		# Set this off explicitly if we're paired
+		$vars{'extend_reads'}=0;
 	}
 	
 	return if $vars{'just_align'};
@@ -464,6 +471,9 @@ sub process_cli {
 			next;
 		} elsif (/--h[elp]*/) {
 			help() if $order;
+		} elsif (/--version/) {
+			# Version string is already printed by default, so just cleanly exit
+			exit 0;
 		} elsif (/--(.*)/) {
 			# if no parameter is specified we assume it's a switch ...
 			# (could be a bit nicer and check this is ok with a hash representing data type ...)
@@ -559,12 +569,10 @@ EOT
 			$vars{'bamfiles'} = 1 if $ext =~ /bam/;
 			
 			if (!$vars{'bamfiles'}) {
-				# $vars{'extend_reads'} = 0;
 				# find paired end fastq files
 				my ($pmatch) = $name_long =~ m/(.*[R|_])[1|2](?=[_\d]*$)/;
 				
 				unless ($pmatch) {
-					printout("  $name_long not paired.  Assuming SE sequencing ...\n");
 					if ($files{$name}) {
 						#same name already in use
 						my $i = 1;
@@ -575,11 +583,7 @@ EOT
 					}
 					$files{$name}[0]=$l;
 					next;
-				} #else {
-				#	printout(" Paired-end reads detected ...");
-				#	$vars{'paired'} = 1;
-				#	$vars{'extend_reads'} = 0;
-				#}
+				}
 				
 				my $name_nopmatch = $pmatch;
 				chop($name_nopmatch);
@@ -622,6 +626,12 @@ EOT
 		}
 		
 		foreach my $name (sort keys %files) {
+			# TODO: %files_paired is not used yet:
+			# the idea here is to eventually allow mixed paired/unpaired processing runs
+			@{$files{$name}} > 1 ?
+				$files_paired{$name}=1 :
+				$files_paired{$name}=0;
+			
 			unless ($vars{'just_align'} || $vars{'just_coverage'}) {
 				check_dam_name($name, @{$files{$name}}[0]);
 			}
@@ -632,7 +642,10 @@ EOT
 		}
 		
 	} elsif (-e $index_file) {
-		print STDERR "*** Warning: the use of an explict index file is deprecated.  You can still use this option, but some new replicate matching functionality may be missing.\n\n";
+		printout("*** Warning: the use of an explict index file is deprecated.\n");
+		printout("*** You can still use this option, but some new replicate matching functionality may be missing.\n");
+		printout("*** This functionality will be removed in future versions.\n\n");
+		
 		
 		open (NORM, "<$index_file") || die "Unable to open index file for reading: $!\n";
 		my @norm = <NORM>;
